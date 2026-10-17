@@ -59,7 +59,11 @@ p { margin: 0; }
 .site-nav { display: flex; gap: 18px; flex-wrap: wrap; font-size: 16px; }
 .site-nav a { color: #fff; text-decoration: none; font-weight: 500; }
 .site-nav a:hover { color: var(--yellow); }
-@media (max-width: 640px) { .site-nav { gap: 14px; font-size: 15px; } .brand img { width: 70px; } }
+@media (max-width: 640px) {
+  .site-header { position: static; } /* the bottom call bar stays visible instead */
+  .site-nav { gap: 14px; font-size: 15px; }
+  .brand img { width: 70px; }
+}
 
 /* ---------- buttons ---------- */
 .btns { display: flex; flex-wrap: wrap; gap: 12px; }
