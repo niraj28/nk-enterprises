@@ -24,6 +24,7 @@ Website for **Surendra Kumar, Authorised LIC Agent**. It's plain HTML and CSS, w
 
 Live site: **https://digitallifenotes.blog/** (DNS is managed in WordPress.com → Domains → digitallifenotes.blog → DNS records).
 - The header and footer are repeated in every page. If you change them, change them everywhere.
+- After editing `assets/style.css`, bump the version in every page (`style.css?v=3` → `?v=4`) so visitors get the new styles straight away.
 
 ## Deploying
 
