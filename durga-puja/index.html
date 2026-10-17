@@ -30,6 +30,8 @@
     .upload small { font-weight: 400; color: var(--muted); }
     .upload input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
     .upload:focus-within { outline: 3px solid var(--yellow); outline-offset: 2px; }
+    .upload.has-photo { border-style: solid; border-color: var(--green); background: #eefaf2; color: var(--green); grid-template-columns: auto 1fr; text-align: left; justify-items: start; column-gap: 14px; }
+    .upload.has-photo img { width: 56px; height: 56px; border-radius: 50%; object-fit: cover; grid-row: span 2; border: 3px solid var(--green); }
     .controls input[type=text], .controls select { font: inherit; font-size: 17px; color: var(--ink); background: #fff; border: 1.5px solid var(--blue-line); border-radius: 12px; padding: 12px 14px; width: 100%; }
     .controls input[type=text]:focus, .controls select:focus { border-color: var(--blue); outline: none; box-shadow: 0 0 0 3px rgba(11,61,145,.15); }
     .controls input[type=range] { width: 100%; accent-color: var(--blue); }
@@ -312,11 +314,60 @@ function setFestival(f) {
 }
 document.querySelectorAll(".festivals button").forEach(b => b.addEventListener("click", () => setFestival(b.dataset.f)));
 
-$("photo").addEventListener("change", e => {
+// Photo loading: tries the fast path first, then a plain <img>, then converts
+// HEIC/HEIF (common on iPhones and Samsung phones) before giving up with a clear message.
+function decodeImage(blob) {
+  return new Promise((resolve, reject) => {
+    const im = new Image();
+    im.onload = () => resolve(im);
+    im.onerror = () => reject(new Error("decode failed"));
+    im.src = URL.createObjectURL(blob);
+  });
+}
+async function readPhoto(file) {
+  if (window.createImageBitmap) {
+    try { return await createImageBitmap(file, { imageOrientation: "from-image" }); } catch (e) {}
+  }
+  try { return await decodeImage(file); } catch (e) {}
+  const isHeic = /hei[cf]/i.test(file.type) || /\.hei[cf]$/i.test(file.name);
+  if (isHeic) {
+    status("Converting your photo…");
+    if (!window.heic2any) {
+      await new Promise((ok, fail) => {
+        const s = document.createElement("script");
+        s.src = "https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js";
+        s.onload = ok; s.onerror = fail; document.head.appendChild(s);
+      });
+    }
+    const out = await window.heic2any({ blob: file, toType: "image/jpeg", quality: 0.9 });
+    return decodeImage(Array.isArray(out) ? out[0] : out);
+  }
+  throw new Error("unsupported");
+}
+function showPhotoAdded(file) {
+  const box = document.querySelector(".upload");
+  box.classList.add("has-photo");
+  box.querySelector("span").textContent = "✓ Photo added";
+  box.querySelector("small").textContent = "Tap to change photo";
+  let thumb = box.querySelector("img");
+  if (!thumb) { thumb = document.createElement("img"); thumb.alt = ""; box.prepend(thumb); }
+  thumb.src = URL.createObjectURL(file);
+}
+$("photo").addEventListener("change", async e => {
   const f = e.target.files[0]; if (!f) return;
-  const im = new Image();
-  im.onload = () => { img = im; zoom = 1; offX = offY = 0; $("zoom").value = 1; draw(); status("Looking good! Drag the photo to adjust it."); };
-  im.src = URL.createObjectURL(f);
+  status("Adding your photo…");
+  try {
+    img = await readPhoto(f);
+    zoom = 1; offX = offY = 0; $("zoom").value = 1; draw();
+    showPhotoAdded(f);
+    status("Photo added! Drag it on the card to adjust, then share.");
+    // On phones the card is above the controls, so bring it into view
+    if (window.matchMedia("(max-width: 859px)").matches) cv.scrollIntoView({ behavior: "smooth", block: "start" });
+  } catch (err) {
+    status("Sorry, this photo couldn't be opened. Please choose a JPG or PNG photo, or take a screenshot of it and use that.");
+  } finally {
+    e.target.value = ""; // allow choosing the same photo again
+  }
 });
 $("zoom").addEventListener("input", e => { zoom = +e.target.value; draw(); });
 $("name").addEventListener("input", draw);
