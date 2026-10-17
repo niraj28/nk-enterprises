@@ -68,7 +68,7 @@ p { margin: 0; }
 .brand b { display: block; font-family: var(--display); font-size: 20px; line-height: 1.1; }
 .brand small { display: block; color: var(--muted); font-size: 13px; font-weight: 600; }
 .site-nav { display: flex; gap: 24px; font-size: 16px; }
-.site-nav a { color: var(--ink); text-decoration: none; font-weight: 500; padding-block: 6px; border-bottom: 2px solid transparent; }
+.site-nav a { white-space: nowrap; color: var(--ink); text-decoration: none; font-weight: 500; padding-block: 6px; border-bottom: 2px solid transparent; }
 .site-nav a:hover, .site-nav a[aria-current="page"] { color: var(--blue); border-color: var(--yellow); }
 .header-call { padding: 9px 18px !important; font-size: 16px !important; }
 @media (max-width: 859px) {
@@ -147,7 +147,15 @@ svg.i { fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: rou
 .plan p { color: var(--muted); font-size: 17px; }
 .plan a { font-weight: 600; font-size: 16px; text-decoration: none; margin-top: 4px; }
 @media (max-width: 960px) { .plan-grid { grid-template-columns: 1fr 1fr; } }
-@media (max-width: 600px) { .plan-grid { grid-template-columns: 1fr; } }
+@media (max-width: 600px) {
+  .plan-grid { grid-template-columns: 1fr; gap: 12px; }
+  .plan { grid-template-columns: 44px minmax(0, 1fr); column-gap: 14px; row-gap: 4px; padding: 18px; }
+  .plan .icon { width: 44px; height: 44px; border-radius: 12px; grid-row: span 3; }
+  .plan .icon svg { width: 24px; height: 24px; }
+  .plan > :not(.icon) { grid-column: 2; }
+  .plan h3 { font-size: 19px; }
+  .plan p { font-size: 16px; }
+}
 
 /* ---------- cover estimator ---------- */
 .estimator { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 40px; align-items: center; }
@@ -180,10 +188,10 @@ svg.i { fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: rou
 .festive p { color: #ffe9c7; max-width: 52ch; }
 .festive .chips { display: flex; flex-wrap: wrap; gap: 8px; }
 .festive .chips span { border: 1px solid rgba(255,214,90,.5); color: var(--gold); padding: 4px 12px; border-radius: 999px; font-size: 15px; font-weight: 600; }
-.card-mock { aspect-ratio: 4/5; max-width: 300px; width: 100%; justify-self: center; border-radius: 16px; border: 3px solid var(--gold); background: radial-gradient(circle at 50% 42%, #c8202a, #6e0a12 75%); display: grid; place-items: center; text-align: center; padding: 20px; box-shadow: 0 30px 50px -25px rgba(0,0,0,.7); }
+.card-mock { aspect-ratio: 4/5; max-width: 300px; width: 100%; justify-self: center; border-radius: 16px; border: 3px solid var(--gold); background: radial-gradient(circle at 50% 42%, #5b2a9a, #12052a 80%); display: grid; place-items: center; text-align: center; padding: 20px; box-shadow: 0 30px 50px -25px rgba(0,0,0,.7); }
 .card-mock b { font-family: var(--display); color: var(--gold); font-size: 30px; line-height: 1.1; }
-.card-mock .ring { width: 46%; aspect-ratio: 1; border-radius: 50%; border: 5px solid var(--gold); margin: 14px auto; background: #5a0710; display: grid; place-items: center; color: var(--gold); font-size: 13px; }
-.card-mock small { color: #ffe9c7; font-size: 13px; }
+.card-mock .ring { width: 46%; aspect-ratio: 1; border-radius: 50%; border: 5px solid var(--gold); margin: 14px auto; background: #12052a; display: grid; place-items: center; color: var(--gold); font-size: 13px; }
+.card-mock small { color: #ffe9c7; font-size: 13px; line-height: 1.3; display: block; }
 @media (max-width: 760px) { .festive .wrap { grid-template-columns: 1fr; } .card-mock { max-width: 220px; } }
 
 /* ---------- tips teaser ---------- */
@@ -241,7 +249,7 @@ svg.i { fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: rou
 .site-footer a:hover { color: var(--yellow); }
 .site-footer ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
 .site-footer .legal { border-top: 1px solid rgba(255,255,255,.12); margin-top: 32px; padding-top: 18px; display: flex; flex-wrap: wrap; gap: 8px 24px; justify-content: space-between; font-size: 14px; }
-@media (max-width: 760px) { .site-footer .cols { grid-template-columns: 1fr; } }
+@media (max-width: 760px) { .site-footer .cols { grid-template-columns: 1fr 1fr; gap: 24px; } .site-footer .cols > :first-child { grid-column: 1 / -1; } }
 
 /* ---------- mobile call bar ---------- */
 .callbar {
