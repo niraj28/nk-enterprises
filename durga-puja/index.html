@@ -40,13 +40,14 @@
     .btn-line { background: #fff; border-color: var(--blue-line); color: var(--ink); }
     .status { min-height: 1.5em; font-size: 15px; color: var(--blue); font-weight: 600; margin: 0; }
     @media (max-width: 859px) { .maker { grid-template-columns: 1fr; } .preview { position: static; } }
-    .sheet { position: fixed; inset: 0; z-index: 50; background: rgba(6,20,50,.6); display: grid; place-items: end center; padding: 12px; padding-bottom: max(12px, env(safe-area-inset-bottom)); overflow-y: auto; }
+    .sheet { position: fixed; inset: 0; z-index: 50; background: rgba(6,20,50,.6); display: grid; grid-template-columns: minmax(0, 1fr); place-items: end center; padding: 12px; padding-bottom: max(12px, env(safe-area-inset-bottom)); overflow-y: auto; }
     @media (min-width: 700px) { .sheet { place-items: center; } }
     .sheet-card { position: relative; background: #fff; border-radius: 22px; padding: 22px; width: min(440px, 100%); display: grid; gap: 14px; box-shadow: 0 30px 60px -20px rgba(0,0,0,.5); }
     .sheet-card h2 { font-size: 24px; padding-right: 40px; }
     .sheet-card img { width: 100%; max-height: 52vh; object-fit: contain; border-radius: 12px; background: #f3f5fa; -webkit-touch-callout: default; user-select: auto; }
     .sheet-card ol { margin: 0; padding-left: 22px; display: grid; gap: 6px; color: var(--ink); font-size: 16px; }
-    .sheet-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .sheet-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+    .sheet-card > * { min-width: 0; }
     .sheet-actions .btn { padding-inline: 12px; font-size: 16px; }
     .sheet-close { position: absolute; top: 12px; right: 12px; width: 40px; height: 40px; border-radius: 50%; border: 0; background: var(--blue-soft); color: var(--blue-ink); font-size: 26px; line-height: 1; cursor: pointer; }
   </style>
@@ -431,8 +432,9 @@ const isPhone = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) || (naviga
 // show the finished card with simple steps and real links (no pop-up blocking).
 function openSheet() {
   const sheet = $("sheet");
-  $("sheetImg").src = cardUrl;
-  $("sheetDownload").href = cardUrl;
+  const dataUrl = cv.toDataURL("image/jpeg", 0.9); // self-contained image: shows everywhere, press-and-hold saves it
+  $("sheetImg").src = dataUrl;
+  $("sheetDownload").href = dataUrl;
   $("sheetDownload").download = `${fest}-card.jpg`;
   $("sheetWa").href = "https://wa.me/?text=" + encodeURIComponent(shareText());
   $("sheetSteps").innerHTML = isPhone
@@ -460,10 +462,9 @@ $("share").addEventListener("click", () => {
   openSheet();
 });
 $("download").addEventListener("click", () => {
-  if (!cardUrl) { status("Getting your card ready… tap again in a second."); prepareCardFile(); return; }
   if (isPhone) { openSheet(); return; } // phones save reliably with press-and-hold
   const a = document.createElement("a");
-  a.href = cardUrl; a.download = `${fest}-card.jpg`;
+  a.href = cv.toDataURL("image/jpeg", 0.92); a.download = `${fest}-card.jpg`;
   document.body.appendChild(a); a.click(); a.remove();
   status("Card downloaded.");
 });
