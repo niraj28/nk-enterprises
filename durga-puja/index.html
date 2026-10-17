@@ -40,6 +40,15 @@
     .btn-line { background: #fff; border-color: var(--blue-line); color: var(--ink); }
     .status { min-height: 1.5em; font-size: 15px; color: var(--blue); font-weight: 600; margin: 0; }
     @media (max-width: 859px) { .maker { grid-template-columns: 1fr; } .preview { position: static; } }
+    .sheet { position: fixed; inset: 0; z-index: 50; background: rgba(6,20,50,.6); display: grid; place-items: end center; padding: 12px; padding-bottom: max(12px, env(safe-area-inset-bottom)); overflow-y: auto; }
+    @media (min-width: 700px) { .sheet { place-items: center; } }
+    .sheet-card { position: relative; background: #fff; border-radius: 22px; padding: 22px; width: min(440px, 100%); display: grid; gap: 14px; box-shadow: 0 30px 60px -20px rgba(0,0,0,.5); }
+    .sheet-card h2 { font-size: 24px; padding-right: 40px; }
+    .sheet-card img { width: 100%; max-height: 52vh; object-fit: contain; border-radius: 12px; background: #f3f5fa; -webkit-touch-callout: default; user-select: auto; }
+    .sheet-card ol { margin: 0; padding-left: 22px; display: grid; gap: 6px; color: var(--ink); font-size: 16px; }
+    .sheet-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .sheet-actions .btn { padding-inline: 12px; font-size: 16px; }
+    .sheet-close { position: absolute; top: 12px; right: 12px; width: 40px; height: 40px; border-radius: 50%; border: 0; background: var(--blue-soft); color: var(--blue-ink); font-size: 26px; line-height: 1; cursor: pointer; }
   </style>
 </head>
 <body>
@@ -106,13 +115,25 @@
       <div class="actions">
         <button class="btn btn-green" id="share" type="button"><svg class="i"><use href="#i-share"/></svg>Share on WhatsApp</button>
         <button class="btn btn-line" id="download" type="button"><svg class="i"><use href="#i-down"/></svg>Save card to phone</button>
-        <button class="btn btn-blue" id="toAgent" type="button"><svg class="i"><use href="#i-chat"/></svg>Send wishes to Surendra ji</button>
       </div>
       <p class="status" id="status" role="status"></p>
       <div class="ad-slot"></div>
     </div>
   </div>
 </main>
+
+<div class="sheet" id="sheet" hidden role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
+  <div class="sheet-card">
+    <button class="sheet-close" id="sheetClose" type="button" aria-label="Close">×</button>
+    <h2 id="sheetTitle">Your card is ready 🎉</h2>
+    <img id="sheetImg" alt="Your festival card">
+    <ol id="sheetSteps"></ol>
+    <div class="sheet-actions">
+      <a class="btn btn-line" id="sheetDownload" href="#" download><svg class="i"><use href="#i-down"/></svg>Download card</a>
+      <a class="btn btn-green" id="sheetWa" href="https://wa.me/" target="_blank" rel="noopener"><svg class="i"><use href="#i-chat"/></svg>Open WhatsApp</a>
+    </div>
+  </div>
+</div>
 
 <footer class="site-footer">
   <div class="wrap">
@@ -304,6 +325,20 @@ function draw() {
   ctx.fillText(`Best wishes from ${AGENT.name}, LIC Advisor`, W / 2, 1205);
   ctx.fillStyle = "#fbe6c2"; ctx.font = `30px "Mukta", sans-serif`;
   ctx.fillText(`📞 ${phones}`, W / 2, 1255);
+  prepareCardFile();
+}
+
+// Keep a ready-made image of the card, so tapping Share can open the phone's
+// share menu immediately (iPhones block it if we wait to create the image).
+let cardFile = null, cardUrl = null, prepTimer = null;
+function prepareCardFile() {
+  clearTimeout(prepTimer);
+  prepTimer = setTimeout(() => cv.toBlob(b => {
+    if (!b) return;
+    cardFile = new File([b], `${fest}-card.jpg`, { type: "image/jpeg" });
+    if (cardUrl) URL.revokeObjectURL(cardUrl);
+    cardUrl = URL.createObjectURL(b);
+  }, "image/jpeg", 0.92), 250);
 }
 
 function setFestival(f) {
@@ -390,31 +425,47 @@ function shareText() {
     `Make your own ${festName()} card with your photo: ${AGENT.cardUrl}#${fest}\n\n` +
     `Card by ${AGENT.name}, your LIC Advisor · 📞 ${phones}\n${AGENT.site}`;
 }
-function toBlob() { return new Promise(r => cv.toBlob(r, "image/jpeg", 0.92)); }
-function saveBlob(blob) {
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob); a.download = `${fest}-card.jpg`;
-  document.body.appendChild(a); a.click(); a.remove();
+const isPhone = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) || (navigator.maxTouchPoints > 1 && /Mac/.test(navigator.platform));
+
+// Fallback when the share menu isn't available (computers, in-app browsers):
+// show the finished card with simple steps and real links (no pop-up blocking).
+function openSheet() {
+  const sheet = $("sheet");
+  $("sheetImg").src = cardUrl;
+  $("sheetDownload").href = cardUrl;
+  $("sheetDownload").download = `${fest}-card.jpg`;
+  $("sheetWa").href = "https://wa.me/?text=" + encodeURIComponent(shareText());
+  $("sheetSteps").innerHTML = isPhone
+    ? "<li><b>Press and hold</b> the card above, then tap <b>Share</b> (or <b>Save image</b>).</li><li>Choose <b>WhatsApp</b> and pick your family or group.</li>"
+    : "<li>Click <b>Download card</b>.</li><li>Click <b>Open WhatsApp</b>, choose a chat, then attach the downloaded card with the 📎 button.</li>";
+  sheet.hidden = false;
+  document.body.style.overflow = "hidden";
 }
+function closeSheet() { $("sheet").hidden = true; document.body.style.overflow = ""; }
+$("sheetClose").addEventListener("click", closeSheet);
+$("sheet").addEventListener("click", e => { if (e.target.id === "sheet") closeSheet(); });
+document.addEventListener("keydown", e => { if (e.key === "Escape" && !$("sheet").hidden) closeSheet(); });
 
 let warned = false;
-$("share").addEventListener("click", async () => {
+$("share").addEventListener("click", () => {
   if (!img && !warned) { warned = true; status("Tip: add your photo first for a personal card. Tap Share again to send without one."); return; }
-  const blob = await toBlob();
-  const file = new File([blob], `${fest}-card.jpg`, { type: "image/jpeg" });
-  if (navigator.canShare && navigator.canShare({ files: [file] })) {
-    try { await navigator.share({ files: [file], text: shareText() }); status("Choose WhatsApp in the share menu to send your card."); return; }
-    catch (e) { if (e.name === "AbortError") return; }
+  if (!cardFile) { status("Getting your card ready… tap Share again in a second."); prepareCardFile(); return; }
+  // Call share() straight away inside the tap, which phones require
+  if (navigator.canShare && navigator.canShare({ files: [cardFile] })) {
+    navigator.share({ files: [cardFile], text: shareText() })
+      .then(() => status("Sent! Thank you for sharing."))
+      .catch(e => { if (e.name !== "AbortError") openSheet(); });
+    return;
   }
-  saveBlob(blob);
-  status("Card saved. WhatsApp is opening: attach the saved card to your message.");
-  window.open("https://wa.me/?text=" + encodeURIComponent(shareText()), "_blank", "noopener");
+  openSheet();
 });
-$("download").addEventListener("click", async () => { saveBlob(await toBlob()); status("Card saved to your phone."); });
-$("toAgent").addEventListener("click", () => {
-  const n = $("name").value.trim();
-  const msg = `Namaste ${AGENT.name} ji 🙏 Happy ${festName()}!\n\nThis is ${n || "[your name]"}. I made a festival card on your website.\n\nI would like to know more about LIC plans. Please call me when you are free.`;
-  window.open(`https://wa.me/91${AGENT.phone}?text=` + encodeURIComponent(msg), "_blank", "noopener");
+$("download").addEventListener("click", () => {
+  if (!cardUrl) { status("Getting your card ready… tap again in a second."); prepareCardFile(); return; }
+  if (isPhone) { openSheet(); return; } // phones save reliably with press-and-hold
+  const a = document.createElement("a");
+  a.href = cardUrl; a.download = `${fest}-card.jpg`;
+  document.body.appendChild(a); a.click(); a.remove();
+  status("Card downloaded.");
 });
 
 setFestival(fest);
