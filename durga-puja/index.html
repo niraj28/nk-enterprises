@@ -1,0 +1,298 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Durga Puja Wish Card</title>
+<meta name="description" content="Make your own Durga Puja wish card with your photo and share it on WhatsApp.">
+<meta property="og:title" content="Make your Durga Puja wish card">
+<meta property="og:description" content="Add your photo, get a festive card, and share it on WhatsApp.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6116067692659093" crossorigin="anonymous"></script>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Yatra+One&family=Young+Serif&family=Mukta:wght@400;600;700&display=swap">
+<style>
+:root{
+  --bg:#fbf5ec; --surface:#ffffff; --ink:#3a1410; --muted:#7a5a52; --line:#ead9c6;
+  --red:#a3121c; --gold:#d99a1e; --gold-ink:#6b4300;
+  --body:"Mukta","Segoe UI",system-ui,sans-serif; --display:"Young Serif",Georgia,serif;
+}
+@media (prefers-color-scheme: dark){:root{
+  --bg:#1a0e0c; --surface:#26140f; --ink:#f6e7dc; --muted:#c9a99c; --line:#43271f;
+  --red:#ff6b6b; --gold:#f0b240; --gold-ink:#f6cf86; color-scheme:dark}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font-size:17px;line-height:1.5}
+.wrap{max-width:1000px;margin:0 auto;padding-block:28px 60px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;gap:24px}
+header{display:grid;gap:6px}
+h1{font-family:var(--display);font-weight:400;font-size:clamp(28px,5vw,40px);margin:0;line-height:1.15;text-wrap:balance}
+.lede{margin:0;color:var(--muted);max-width:60ch}
+.grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:28px;align-items:start}
+.controls{display:grid;gap:16px;min-width:0}
+label{display:grid;gap:4px;font-weight:600;font-size:15px}
+input[type=text],select{font:inherit;font-size:16px;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:10px 12px;width:100%}
+input[type=range]{width:100%;accent-color:var(--red)}
+.upload{display:grid;place-items:center;gap:4px;text-align:center;padding:22px;border:2px dashed var(--gold);border-radius:12px;background:var(--surface);cursor:pointer;font-weight:600}
+.upload small{font-weight:400;color:var(--muted)}
+.upload input{position:absolute;opacity:0;width:1px;height:1px}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.btns{display:grid;gap:10px}
+button{font:inherit;font-weight:700;font-size:16px;border-radius:999px;padding:13px 18px;cursor:pointer;border:2px solid transparent}
+.wa{background:#1f9d55;color:#fff}
+.agent{background:transparent;border-color:var(--red);color:var(--red)}
+.save{background:transparent;border-color:var(--line);color:var(--ink)}
+button:focus-visible,input:focus-visible,select:focus-visible,.upload:focus-within{outline:3px solid var(--gold);outline-offset:2px}
+.preview{position:sticky;top:12px;display:grid;gap:8px}
+canvas{width:100%;height:auto;border-radius:12px;box-shadow:0 20px 40px -24px rgba(0,0,0,.5);touch-action:none;cursor:grab;background:#7a0d14}
+.hint{font-size:14px;color:var(--muted);margin:0}
+.status{min-height:1.5em;font-size:15px;color:var(--gold-ink);margin:0}
+footer{font-size:14px;color:var(--muted);border-top:1px solid var(--line);padding-top:14px}
+footer a{color:var(--red)}
+@media (max-width:760px){.grid{grid-template-columns:1fr}.preview{position:static;order:-1}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <a href="../" style="color:var(--red);font-weight:600;text-decoration:none">← Surendra Kumar, LIC Agent</a>
+    <h1>Make your Durga Puja wish card</h1>
+    <p class="lede">Add your photo and name, and share a festive card with friends and family on WhatsApp. Your photo stays on your phone; nothing is uploaded.</p>
+  </header>
+
+  <div class="grid">
+    <div class="preview">
+      <canvas id="card" width="1080" height="1350" aria-label="Your Durga Puja card preview"></canvas>
+      <p class="hint">Drag the photo to move it. Use the slider to zoom.</p>
+    </div>
+
+    <div class="controls">
+      <label class="upload" for="photo">
+        <span>📷 Choose your photo</span>
+        <small>From your gallery or take a new one</small>
+        <input id="photo" type="file" accept="image/*">
+      </label>
+      <label for="zoom">Photo zoom<input id="zoom" type="range" min="1" max="3" step="0.01" value="1"></label>
+      <label for="name">Your name<input id="name" type="text" maxlength="40" placeholder="e.g. Sharma Family" autocomplete="name"></label>
+      <label for="msg">Greeting
+        <select id="msg">
+          <option value="en">May Maa Durga bless you with strength, joy and prosperity</option>
+          <option value="hi">माँ दुर्गा आपको शक्ति, सुख और समृद्धि दें</option>
+          <option value="bn">মা দুর্গা আপনাকে শক্তি, আনন্দ ও সমৃদ্ধি দিন</option>
+        </select>
+      </label>
+
+      <div class="btns">
+        <button class="wa" id="share" type="button">Share on WhatsApp</button>
+        <button class="save" id="download" type="button">Save card to phone</button>
+        <button class="agent" id="toAgent" type="button"></button>
+      </div>
+      <p class="status" id="status" role="status"></p>
+    </div>
+  </div>
+
+  <footer id="foot"></footer>
+</div>
+
+<script>
+// ---- Agent details: edit these ----
+const AGENT = {
+  name: "Surendra Kumar",
+  phone: "9431487230",            // WhatsApp number: 10-digit Indian mobile, no +91
+  phone2: "8271254193",
+  code: "",                       // optional: LIC agency code
+  city: "",                       // optional
+  site: new URL("../", location.href).href,
+  cardUrl: location.href.split("#")[0]
+};
+// -----------------------------------
+
+const GREET = {
+  en: { title: "Happy Durga Puja", line: "May Maa Durga bless you with\nstrength, joy and prosperity", font: "Young Serif" },
+  hi: { title: "शुभ दुर्गा पूजा", line: "माँ दुर्गा आपको शक्ति,\nसुख और समृद्धि दें", font: "Yatra One" },
+  bn: { title: "শুভ দুর্গাপূজা", line: "মা দুর্গা আপনাকে শক্তি,\nআনন্দ ও সমৃদ্ধি দিন", font: "Mukta" }
+};
+
+const $ = id => document.getElementById(id);
+const cv = $("card"), ctx = cv.getContext("2d");
+const W = cv.width, H = cv.height;
+const PHOTO = { x: W / 2, y: 610, r: 250 };
+let img = null, zoom = 1, offX = 0, offY = 0;
+
+$("toAgent").textContent = `Send wishes to ${AGENT.name} (LIC advisor)`;
+const phones = [AGENT.phone, AGENT.phone2].filter(Boolean).join(" / ");
+const agentLine = [`📞 ${phones}`, AGENT.city, AGENT.code && `Agency code ${AGENT.code}`].filter(Boolean).join(" · ");
+$("foot").innerHTML = `Card made by <b>${AGENT.name}</b>, your LIC Advisor · ${agentLine} · <a href="${AGENT.site}" target="_blank" rel="noopener">Visit website</a>`;
+
+function mandala(cx, cy, R, petals, color, alpha) {
+  ctx.save(); ctx.translate(cx, cy); ctx.globalAlpha = alpha; ctx.strokeStyle = color; ctx.fillStyle = color;
+  for (let ring = 0; ring < 4; ring++) {
+    const r = R * (0.45 + ring * 0.18), n = petals + ring * 8;
+    for (let i = 0; i < n; i++) {
+      const a = (i / n) * Math.PI * 2;
+      ctx.save(); ctx.rotate(a);
+      ctx.beginPath(); ctx.ellipse(0, -r, R * 0.035 + ring * 3, R * 0.09, 0, 0, Math.PI * 2);
+      ring % 2 ? ctx.fill() : (ctx.lineWidth = 3, ctx.stroke());
+      ctx.restore();
+    }
+    ctx.beginPath(); ctx.arc(0, 0, r - R * 0.11, 0, Math.PI * 2); ctx.lineWidth = 2; ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function border() {
+  ctx.save();
+  ctx.strokeStyle = "#f2c04e"; ctx.lineWidth = 6; ctx.strokeRect(34, 34, W - 68, H - 68);
+  ctx.lineWidth = 2; ctx.strokeRect(50, 50, W - 100, H - 100);
+  ctx.fillStyle = "#f2c04e";
+  const step = 44;
+  for (let x = 72; x <= W - 72; x += step) { dot(x, 42); dot(x, H - 42); }
+  for (let y = 72; y <= H - 72; y += step) { dot(42, y); dot(W - 42, y); }
+  ctx.restore();
+  function dot(x, y) { ctx.beginPath(); ctx.arc(x, y, 5, 0, Math.PI * 2); ctx.fill(); }
+}
+
+function diyas() {
+  // small lamps along the lower edge of the photo area
+  for (const x of [170, W - 170]) {
+    const y = 820;
+    ctx.save();
+    const g = ctx.createRadialGradient(x, y - 40, 4, x, y - 40, 70);
+    g.addColorStop(0, "rgba(255,210,90,.9)"); g.addColorStop(1, "rgba(255,170,40,0)");
+    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, y - 40, 70, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = "#ffd65a"; ctx.beginPath();
+    ctx.moveTo(x, y - 78); ctx.quadraticCurveTo(x + 16, y - 40, x, y - 26); ctx.quadraticCurveTo(x - 16, y - 40, x, y - 78); ctx.fill();
+    ctx.fillStyle = "#c8741a"; ctx.beginPath(); ctx.ellipse(x, y - 14, 46, 18, 0, 0, Math.PI); ctx.fill();
+    ctx.fillStyle = "#f2c04e"; ctx.fillRect(x - 46, y - 18, 92, 6);
+    ctx.restore();
+  }
+}
+
+function wrapLines(text) { return text.split("\n"); }
+
+function draw() {
+  const lang = $("msg").value, G = GREET[lang];
+  // background
+  const bg = ctx.createRadialGradient(W / 2, 560, 80, W / 2, 640, 900);
+  bg.addColorStop(0, "#c8202a"); bg.addColorStop(0.6, "#8e0f18"); bg.addColorStop(1, "#4d060c");
+  ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+  mandala(W / 2, PHOTO.y, 560, 16, "#f2c04e", 0.22);
+  border();
+
+  // title
+  ctx.textAlign = "center"; ctx.textBaseline = "alphabetic";
+  ctx.fillStyle = "#ffe08a";
+  ctx.font = `${lang === "en" ? 92 : 100}px "${G.font}", Georgia, serif`;
+  ctx.shadowColor = "rgba(0,0,0,.35)"; ctx.shadowBlur = 12;
+  ctx.fillText(G.title, W / 2, 230);
+  ctx.shadowBlur = 0;
+  ctx.font = `600 34px "Mukta", sans-serif`; ctx.fillStyle = "#fbe6c2";
+  ctx.fillText("Jai Maa Durga · Festive Wishes", W / 2, 290);
+
+  // photo ring
+  ctx.save();
+  ctx.beginPath(); ctx.arc(PHOTO.x, PHOTO.y, PHOTO.r + 22, 0, Math.PI * 2);
+  const ring = ctx.createLinearGradient(0, PHOTO.y - PHOTO.r, 0, PHOTO.y + PHOTO.r);
+  ring.addColorStop(0, "#ffe9a6"); ring.addColorStop(1, "#c88a12");
+  ctx.fillStyle = ring; ctx.fill();
+  ctx.beginPath(); ctx.arc(PHOTO.x, PHOTO.y, PHOTO.r, 0, Math.PI * 2); ctx.clip();
+  if (img) {
+    const s = Math.max((PHOTO.r * 2) / img.width, (PHOTO.r * 2) / img.height) * zoom;
+    const w = img.width * s, h = img.height * s;
+    ctx.drawImage(img, PHOTO.x - w / 2 + offX, PHOTO.y - h / 2 + offY, w, h);
+  } else {
+    ctx.fillStyle = "#6e0a12"; ctx.fillRect(PHOTO.x - PHOTO.r, PHOTO.y - PHOTO.r, PHOTO.r * 2, PHOTO.r * 2);
+    ctx.fillStyle = "#f2c04e"; ctx.font = `600 40px "Mukta", sans-serif`;
+    ctx.fillText("Your photo here", PHOTO.x, PHOTO.y + 14);
+  }
+  ctx.restore();
+  diyas();
+
+  // name + greeting
+  const name = $("name").value.trim();
+  ctx.fillStyle = "#ffffff"; ctx.font = `64px "Young Serif", Georgia, serif`;
+  ctx.fillText(name || "Your Name", W / 2, 960);
+  ctx.fillStyle = "#fbe6c2"; ctx.font = `${lang === "en" ? 40 : 44}px "Mukta", sans-serif`;
+  wrapLines(G.line).forEach((l, i) => ctx.fillText(l, W / 2, 1030 + i * 54));
+
+  // agent band
+  ctx.fillStyle = "rgba(0,0,0,.28)"; ctx.fillRect(56, 1150, W - 112, 140);
+  ctx.fillStyle = "#ffe08a"; ctx.font = `700 34px "Mukta", sans-serif`;
+  ctx.fillText(`Best wishes from ${AGENT.name}, LIC Advisor`, W / 2, 1205);
+  ctx.fillStyle = "#fbe6c2"; ctx.font = `30px "Mukta", sans-serif`;
+  ctx.fillText(agentLine, W / 2, 1255);
+}
+
+// photo upload
+$("photo").addEventListener("change", e => {
+  const f = e.target.files[0]; if (!f) return;
+  const url = URL.createObjectURL(f);
+  const im = new Image();
+  im.onload = () => { img = im; zoom = 1; offX = offY = 0; $("zoom").value = 1; draw(); };
+  im.src = url;
+});
+$("zoom").addEventListener("input", e => { zoom = +e.target.value; draw(); });
+$("name").addEventListener("input", draw);
+$("msg").addEventListener("change", draw);
+
+// drag to reposition
+let drag = null;
+cv.addEventListener("pointerdown", e => { if (!img) return; drag = { x: e.clientX, y: e.clientY, ox: offX, oy: offY }; cv.setPointerCapture(e.pointerId); });
+cv.addEventListener("pointermove", e => {
+  if (!drag) return;
+  const k = W / cv.getBoundingClientRect().width;
+  offX = drag.ox + (e.clientX - drag.x) * k; offY = drag.oy + (e.clientY - drag.y) * k; draw();
+});
+cv.addEventListener("pointerup", () => drag = null);
+
+function status(t) { $("status").textContent = t; }
+function shareText() {
+  const n = $("name").value.trim();
+  return `🙏 Happy Durga Puja${n ? " from " + n : ""}! May Maa Durga bless you and your family.\n\n` +
+    `Make your own Durga Puja card with your photo: ${AGENT.cardUrl}\n\n` +
+    `Card by ${AGENT.name}, your LIC Advisor · 📞 ${phones}\n${AGENT.site}`;
+}
+function toBlob() { return new Promise(r => cv.toBlob(r, "image/jpeg", 0.92)); }
+function saveBlob(blob) {
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob); a.download = "durga-puja-card.jpg";
+  document.body.appendChild(a); a.click(); a.remove();
+}
+
+$("share").addEventListener("click", async () => {
+  if (!img && !confirmNoPhoto()) return;
+  const blob = await toBlob();
+  const file = new File([blob], "durga-puja-card.jpg", { type: "image/jpeg" });
+  if (navigator.canShare && navigator.canShare({ files: [file] })) {
+    try {
+      await navigator.share({ files: [file], text: shareText() });
+      status("Choose WhatsApp in the share menu to send your card.");
+      return;
+    } catch (e) { if (e.name === "AbortError") return; }
+  }
+  // desktop / unsupported: save image, then open WhatsApp with the message
+  saveBlob(blob);
+  status("Card saved. WhatsApp is opening: attach the saved card to your message.");
+  window.open("https://wa.me/?text=" + encodeURIComponent(shareText()), "_blank", "noopener");
+});
+
+$("download").addEventListener("click", async () => { saveBlob(await toBlob()); status("Card saved to your downloads."); });
+
+$("toAgent").addEventListener("click", () => {
+  const n = $("name").value.trim();
+  const msg = `Namaste ${AGENT.name} ji 🙏 Happy Durga Puja!\n\nThis is ${n || "[your name]"}. I made a Durga Puja card on your website.` +
+    `\n\nI would like to know more about LIC plans. Please call me when you are free.`;
+  window.open(`https://wa.me/91${AGENT.phone}?text=` + encodeURIComponent(msg), "_blank", "noopener");
+});
+
+let warned = false;
+function confirmNoPhoto() {
+  if (warned) return true;
+  warned = true; status("Tip: add your photo first for a personal card. Tap Share again to send without one.");
+  return false;
+}
+
+document.fonts.load('64px "Young Serif"').then(() => Promise.all([
+  document.fonts.load('100px "Yatra One"', "शुभ"), document.fonts.load('600 34px "Mukta"'), document.fonts.load('40px "Mukta"', "শুভ")
+])).finally(draw);
+draw();
+</script>
+</body>
+</html>
