@@ -1,2 +1,4 @@
 User-agent: *
 Allow: /
+
+Sitemap: https://digitallifenotes.blog/sitemap.xml

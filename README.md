@@ -20,7 +20,9 @@ Website for **Surendra Kumar, Authorised LIC Agent**. It's plain HTML and CSS, w
 
 - **Change text:** open the `.html` file, edit the words between the tags, and save.
 - **Change the phone number:** search all files for `9431487230` and replace it.
-- **Add a blog post:** copy `blog/term-vs-endowment.html` to a new file name and change the title, description and article text. Then add a card for it at the top of the list in `blog/index.html`.
+- **Add a blog post:** copy `blog/term-vs-endowment.html` to a new file name and change the title, description and article text. Then add a card for it at the top of the list in `blog/index.html`, and a `<url>` line for it in `sitemap.xml`.
+
+Live site: **https://digitallifenotes.blog/** (DNS is managed in WordPress.com → Domains → digitallifenotes.blog → DNS records).
 - The header and footer are repeated in every page. If you change them, change them everywhere.
 
 ## Deploying
