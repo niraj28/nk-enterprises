@@ -6,8 +6,9 @@ Electronics storefront and website for **Surendra Kumar, Authorised LIC Agent**.
 
 | File | Page |
 |---|---|
-| `index.html` | Combined electronics and LIC homepage |
-| `insurance/index.html` | Original LIC homepage: plans, calculator and contact |
+| `index.html` | Homepage: LIC services, plans, calculator and contact |
+| `insurance/index.html` | Redirects old `/insurance/` links to the homepage |
+| `shop/index.html` | Electronics store |
 | `durga-puja/index.html` | Festival wish card maker (photo + name → share on WhatsApp) |
 | `blog/index.html` | List of insurance tips |
 | `blog/*.html` | One file per article |
@@ -59,13 +60,12 @@ The AdSense script is already in the `<head>` of every page, and `ads.txt` is in
 
 ## Electronics storefront (October 2026)
 
-The homepage now connects the electronics store and existing LIC services. The original homepage is preserved at `insurance/index.html`, including its calculator and contact options. Existing homepage links to `#plans`, `#cover`, `#festival` and `#contact` redirect there. Blog pages and the festival card maker remain available and link to the store.
+The LIC page is the homepage (`index.html`). The electronics store lives at `shop/`. `insurance/index.html` only redirects old links (keeping `#plans`, `#cover`, `#contact`) to the homepage.
 
 | File | Purpose |
 |---|---|
-| `index.html` | Combined homepage and featured products |
 | `shop/index.html` | Full catalog, filters, search, sorting and saved items |
-| `insurance/index.html` | Original LIC homepage and calculator |
+| `index.html` | LIC homepage and calculator |
 | `assets/catalog.js` | Editable sample product data and optional enquiry channel |
 | `assets/store.js` | Product dialogs, cart, saved items and enquiry checkout |
 | `assets/store.css` | Responsive store theme, independent of existing LIC styles |
@@ -80,7 +80,7 @@ No installation or build is needed. From the repository directory:
 python3 -m http.server 4173 --bind 127.0.0.1
 ```
 
-Open `http://127.0.0.1:4173/`. Run static checks with `python3 tests/check_site.py`.
+Open `http://127.0.0.1:4173/` (LIC homepage) or `/shop/`. Run static checks with `python3 tests/check_site.py`.
 
 ### Catalog and enquiries
 
@@ -98,4 +98,4 @@ Check desktop and mobile layouts, filter empty states, unavailable products, sav
 
 ### Moving between store and insurance
 
-A shared sticky switch appears above the header on the homepage, shop, LIC page, insurance articles, privacy page and festival card maker. “Main homepage” always returns to the root. “Electronics” opens the catalog and “LIC services” opens the insurance homepage in the same tab. The active section is highlighted (lime for electronics, yellow for LIC) and exposed through `aria-current="location"`; shared privacy/festival pages leave both unselected. The switch is visible on mobile without opening a menu. Styles live in `assets/navigation.css`. Keep the switch markup consistent when adding a page.
+A shared sticky switch appears above the header on the LIC homepage, shop, insurance articles, privacy page and festival card maker. “Main homepage” and “LIC services” both return to the root (the LIC homepage). “Electronics” opens the catalog. The active section is highlighted (lime for electronics, yellow for LIC) and exposed through `aria-current="location"`; shared privacy/festival pages leave both unselected. The switch is visible on mobile without opening a menu. Styles live in `assets/navigation.css`. Keep the switch markup consistent when adding a page.

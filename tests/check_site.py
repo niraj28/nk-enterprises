@@ -25,7 +25,6 @@ for path,page in pages.items():
         if target.is_dir(): target=target/'index.html'
         if not target.exists(): errors.append(f'{path.relative_to(ROOT)}: missing {link}')
         elif parsed.fragment and target in pages and unquote(parsed.fragment) not in pages[target].ids:
-            if target==ROOT/'index.html' and parsed.fragment in ('cover','plans','contact','festival'): continue
             errors.append(f'{path.relative_to(ROOT)}: missing anchor {link}')
 catalog=json.loads((ROOT/'assets/catalog.js').read_text().split('window.NK_STORE = ',1)[1].rstrip(';\n'))
 products=catalog['products']; ids=[p['id'] for p in products]
@@ -38,9 +37,10 @@ for p in products:
     assert (ROOT/'assets/products'/p['image']).is_file()
     ET.parse(ROOT/'assets/products'/p['image'])
 ET.parse(ROOT/'sitemap.xml')
-insurance=(ROOT/'insurance/index.html').read_text()
+insurance=(ROOT/'index.html').read_text()
 assert all(f'id="{anchor}"' in insurance for anchor in ('plans','cover','calc','contact','festival'))
 assert '10 + loans - have' in insurance
+assert 'location.replace("../" + location.hash)' in (ROOT/'insurance/index.html').read_text()
 assert 'sheetDownload' in (ROOT/'durga-puja/index.html').read_text()
 assert len(list((ROOT/'blog').glob('*.html')))==15
 if errors: raise SystemExit('\n'.join(errors))
