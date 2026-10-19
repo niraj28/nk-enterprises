@@ -1,0 +1,256 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Electronics Store | N.K.Enterprises</title>
+<meta name="description" content="Explore everyday electronics at N.K.Enterprises, alongside personal LIC insurance services, useful guides and festival cards.">
+<meta name="theme-color" content="#172b33">
+<link rel="canonical" href="https://digitallifenotes.blog/shop/">
+<link rel="icon" href="../assets/favicon.svg">
+<link rel="stylesheet" href="../assets/store.css?v=1">
+<script defer src="../assets/catalog.js?v=2">
+</script>
+<script defer src="../assets/store.js?v=2">
+</script>
+<link rel="stylesheet" href="../assets/navigation.css?v=1">
+</head>
+<body data-page="shop" data-base="../">
+<a class="skip-link" href="#main">Skip to content</a>
+<header class="store-header">
+<div class="experience-bar">
+  <div class="experience-inner">
+    <a class="experience-home" href="../"><span aria-hidden="true">←</span> Main homepage</a>
+    <nav class="experience-switch" aria-label="Choose a website section">
+      <a class="experience-option experience-electronics" href="../shop/" aria-current="location"><span class="experience-indicator" aria-hidden="true"></span>Electronics</a>
+      <a class="experience-option experience-lic" href="../insurance/"><span class="experience-indicator" aria-hidden="true"></span>LIC services</a>
+    </nav>
+  </div>
+</div>
+<div class="container header-main">
+<a class="logo" href=".././" aria-label="N.K.Enterprises home">
+<span class="monogram">nk<span>.</span>
+</span>
+<span>N.K. ENTERPRISES<small>TECHNOLOGY &amp; LIFE</small>
+</span>
+</a>
+<nav class="desktop-nav" aria-label="Main navigation">
+<a href=".././" >Home</a>
+<a href="../shop/" aria-current="page">Electronics</a>
+<a href="../insurance/">LIC services</a>
+<a href="../blog/">Journal</a>
+</nav>
+<div class="header-actions">
+<a class="icon-button" href="../shop/?saved=1" aria-label="Saved products">
+<svg class="icon" aria-hidden="true" viewBox="0 0 24 24">
+<path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8L12 21l8.8-8.6a5.5 5.5 0 0 0 0-7.8Z"/>
+</svg>
+</a>
+<button class="cart-trigger" aria-label="Open shopping bag">
+<svg class="icon" aria-hidden="true" viewBox="0 0 24 24">
+<path d="M5 7h14l1 14H4L5 7Z"/>
+<path d="M8 8V6a4 4 0 0 1 8 0v2"/>
+</svg>
+<span class="bag-label">Bag</span>
+<span data-cart-count>0</span>
+</button>
+<button class="icon-button mobile-toggle" aria-expanded="false" aria-controls="mobile-menu" aria-label="Toggle navigation">
+<svg class="icon" aria-hidden="true" viewBox="0 0 24 24">
+<path d="M4 6h16M4 12h16M4 18h16"/>
+</svg>
+</button>
+</div>
+</div>
+<nav id="mobile-menu" aria-label="Mobile navigation" hidden>
+<a href=".././">Home</a>
+<a href="../shop/">Electronics</a>
+<a href="../insurance/">LIC services</a>
+<a href="../blog/">Journal</a>
+<a href="../durga-puja/">Festival cards</a>
+</nav>
+</header>
+<main id="main">
+<section class="catalog-intro container">
+<p class="breadcrumb">
+<a href="../">Home</a> / Electronics</p>
+<span class="eyebrow">YOUR NEXT EVERYDAY ESSENTIAL</span>
+<h1>Explore the electronics store.</h1>
+<p>A little more productive. A little more connected. A lot more you.</p>
+</section>
+<section class="container section catalog" id="collection">
+<div class="section-heading">
+<div>
+<span class="eyebrow">THE COLLECTION</span>
+<h2>Made for your kind of day.</h2>
+</div>
+</div>
+<p class="sample-notice">
+<span>PREVIEW COLLECTION</span> Sample products, illustrations, prices and availability. Enquiries only; no online payments.</p>
+<div class="catalog-controls">
+<label class="search-field">
+<svg class="icon" aria-hidden="true" viewBox="0 0 24 24">
+<circle cx="10.5" cy="10.5" r="6.5"/>
+<path d="m16 16 5 5"/>
+</svg>
+<input type="search" id="search" placeholder="Search products, features…" aria-label="Search products">
+</label>
+<label class="sort-field">Sort by <select id="sort">
+<option value="featured">Featured</option>
+<option value="price-low">Price: low to high</option>
+<option value="price-high">Price: high to low</option>
+<option value="name">Name: A–Z</option>
+</select>
+</label>
+</div>
+<div class="catalog-layout">
+<aside class="filters">
+<div class="filter-title">
+<h3>Filters</h3>
+<button class="text-button" id="reset">Reset</button>
+</div>
+<fieldset>
+<legend>Category</legend>
+<div id="category-filters">
+</div>
+</fieldset>
+<label class="price-filter" for="max-price">Maximum sample price <b id="price-label">₹60,000</b>
+<input type="range" id="max-price" min="0" max="60000" step="500" value="60000">
+</label>
+<label class="check">
+<input type="checkbox" id="in-stock"> Available samples only</label>
+<label class="check">
+<input type="checkbox" id="saved-only"> Saved products only</label>
+<div class="filter-note">A considered collection.<br>One easy place to explore.</div>
+</aside>
+<div>
+<div class="results-bar">
+<span id="results-count" role="status">
+</span>
+<span>Sample collection</span>
+</div>
+<div id="product-grid" class="product-grid" aria-label="Products">
+</div>
+<div id="empty-results" class="empty-state" hidden>
+<h3>No matches just yet.</h3>
+<p>Try another search or reset your filters.</p>
+<button class="button secondary" id="empty-reset">Reset filters</button>
+</div>
+</div>
+</div>
+<noscript>
+<p>Please enable JavaScript to browse products and use the shopping bag. Our <a href="../insurance/">LIC services</a> and <a href="../blog/">insurance guides</a> are still available.</p>
+</noscript>
+</section>
+<section class="container section help-section" id="how-it-works">
+<div>
+<span class="eyebrow">A FEW GOOD THINGS TO KNOW</span>
+<h2>Simple from<br>browse to enquiry.</h2>
+</div>
+<div class="faq">
+<details>
+<summary>How do I order on WhatsApp?</summary>
+<p>Add items to your bag and choose “Order via WhatsApp”. Enter your details, review the request, then continue to WhatsApp to send it to +91 9431487230. The store will confirm availability, final pricing and delivery. You can also copy or download the request.</p>
+</details>
+<details>
+<summary>Are these products available to buy?</summary>
+<p>This is a preview collection with fictional sample products and prices. Actual stock, specifications, final pricing, taxes, delivery and warranty must be confirmed by the store before you purchase.</p>
+</details>
+<details>
+<summary>What about payment, delivery and returns?</summary>
+<p>Online payment is not enabled. Delivery charges, payment options, warranty and return terms will be supplied by the store with a confirmed quote. Creating an enquiry does not reserve stock.</p>
+</details>
+</div>
+</section>
+</main>
+<footer class="store-footer">
+<div class="container footer-grid">
+<div>
+<a class="logo" href=".././">
+<span class="monogram">nk<span>.</span>
+</span>
+<span>N.K. ENTERPRISES<small>TECHNOLOGY &amp; LIFE</small>
+</span>
+</a>
+<p>Everyday essentials.<br>Personal connections. New possibilities.</p>
+</div>
+<div>
+<h3>Explore</h3>
+<a href="../shop/">Electronics</a>
+<a href="../shop/?saved=1">Saved products</a>
+<a href="../insurance/">LIC services</a>
+</div>
+<div>
+<h3>Good to know</h3>
+<a href="#how-it-works">Shopping &amp; enquiries</a>
+<a href="../privacy.html">Privacy policy</a>
+<a href="../durga-puja/">Festival card maker</a>
+</div>
+<div>
+<h3>Insurance assistance</h3>
+<a href="tel:+919431487230">+91 9431487230</a>
+<a href="../insurance/#contact">Contact Surendra Kumar ↗</a>
+<small>For LIC services and policy support.</small>
+</div>
+</div>
+<div class="container footer-bottom">
+<span>© 2026 N.K.Enterprises</span>
+<span>Electronics &amp; insurance, thoughtfully connected.</span>
+</div>
+</footer>
+<dialog id="product-dialog" aria-labelledby="product-title">
+<button class="close-button" data-close aria-label="Close product details">×</button>
+<div id="product-detail">
+</div>
+</dialog>
+<dialog id="cart-dialog" class="cart-dialog" aria-labelledby="cart-title">
+<div class="dialog-heading">
+<div>
+<span class="eyebrow">YOUR EVERYDAY EDIT</span>
+<h2 id="cart-title">Shopping bag</h2>
+</div>
+<button class="close-button" data-close aria-label="Close shopping bag">×</button>
+</div>
+<div id="cart-content">
+</div>
+</dialog>
+<dialog id="checkout-dialog" aria-labelledby="checkout-title">
+<button class="close-button" data-close aria-label="Close enquiry checkout">×</button>
+<span class="eyebrow">ONE LAST LOOK</span>
+<h2 id="checkout-title">Order via WhatsApp</h2>
+<p class="muted">Review your order request before sending it on WhatsApp. The store must confirm your order; no payment is taken here.</p>
+<div id="checkout-summary">
+</div>
+<form id="checkout-form">
+<div class="form-grid">
+<label>Your name<input name="name" autocomplete="name" maxlength="80" required>
+</label>
+<label>Phone number<input name="phone" type="tel" autocomplete="tel" inputmode="tel" pattern="[+0-9 ()-]{7,20}" maxlength="20" required>
+</label>
+<label class="full">City / town<input name="city" autocomplete="address-level2" maxlength="100" required>
+</label>
+<label class="full">Anything else? <small>(optional)</small>
+<textarea name="notes" rows="2" maxlength="600" placeholder="Questions, colour preferences, or delivery needs">
+</textarea>
+</label>
+</div>
+<p class="fine">Your details stay on this page until you copy, download, or continue to WhatsApp. Continuing shares the message contents with WhatsApp; tap Send there to deliver it to the store. Details are not saved in browser storage.</p>
+<button class="button primary full" type="submit">Review order request →</button>
+</form>
+<div id="enquiry-result" hidden>
+<h3>Your order request is ready.</h3>
+<p class="muted">Continue to WhatsApp to send your request to N.K.Enterprises at +91 9431487230. Review the prefilled message and tap Send in WhatsApp. Your order is confirmed only after the store replies.</p>
+<label class="sr-only" for="enquiry-text">Your enquiry draft</label>
+<textarea id="enquiry-text" readonly rows="9">
+</textarea>
+<div class="draft-actions">
+<a id="whatsapp-enquiry" class="button primary full" target="_blank" rel="noopener noreferrer" hidden>Continue to WhatsApp ↗</a>
+<button id="copy-enquiry" class="button secondary">Copy enquiry</button>
+<button id="download-enquiry" class="button secondary">Download .txt</button>
+<button class="text-button" id="edit-enquiry">Edit details</button>
+</div>
+</div>
+</dialog>
+<div id="toast" class="toast" role="status">
+</div>
+</body>
+</html>
