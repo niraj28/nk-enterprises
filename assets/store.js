@@ -125,6 +125,7 @@
     const r = dialog.getBoundingClientRect(); if (e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom) dialog.close();
   }));
   $('.mobile-toggle').addEventListener('click', e => { const button = e.currentTarget; const open = button.getAttribute('aria-expanded') !== 'true'; button.setAttribute('aria-expanded', String(open)); $('#mobile-menu').hidden = !open; });
+  $('#mobile-menu').addEventListener('click', e => { if (e.target.closest('a')) { $('#mobile-menu').hidden = true; $('.mobile-toggle').setAttribute('aria-expanded', 'false'); } });
   $('#checkout-form').addEventListener('submit', e => {
     e.preventDefault(); if (!entries().length) { $('#checkout-dialog').close(); toast('Your bag is empty. Add a product to prepare an enquiry.'); return; }
     const data = new FormData(e.currentTarget);
