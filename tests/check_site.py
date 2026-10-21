@@ -43,5 +43,14 @@ assert '10 + loans - have' in insurance
 assert 'location.replace("../" + location.hash)' in (ROOT/'insurance/index.html').read_text()
 assert 'sheetDownload' in (ROOT/'durga-puja/index.html').read_text()
 assert len(list((ROOT/'blog').glob('*.html')))==15
+# Panels that use the hidden attribute must stay hidden even when a component sets display
+for css in ('assets/style.css','assets/store.css'):
+    assert '[hidden] { display: none !important; }' in (ROOT/css).read_text(), css
+assert '.dot-root [hidden]{display:none!important}' in (ROOT/'assets/dot.js').read_text()
+for path in pages:
+    text=path.read_text()
+    if 'noindex' not in text and path.name!='404.html':
+        for tag in ('rel="canonical"','og:title','og:image','name="description"'):
+            if tag not in text: errors.append(f'{path.relative_to(ROOT)}: missing {tag}')
 if errors: raise SystemExit('\n'.join(errors))
 print(f'PASS: {len(pages)} HTML pages, all local links/anchors, {len(products)} product records and assets, sitemap, LIC calculator and festival routes.')

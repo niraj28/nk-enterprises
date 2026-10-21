@@ -269,3 +269,6 @@ svg.i { fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: rou
   .btn, .plan, .post-card { transition: none; }
   .btn:hover, .plan:hover { transform: none; }
 }
+
+/* The hidden attribute always wins over component display rules */
+[hidden] { display: none !important; }

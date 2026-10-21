@@ -65,12 +65,13 @@ html { scroll-padding-top: 180px; }
   .site-header .header-call { display: none !important; }
 }
 @media (max-width: 600px) {
-  .experience-inner { width: calc(100% - 24px); display: grid; grid-template-columns: 70px minmax(0, 1fr); gap: 8px; padding: 7px 0; }
-  .experience-home { font-size: 11px; gap: 5px; line-height: 1.4; }
+  .experience-inner { width: calc(100% - 24px); padding: 6px 0; }
   .experience-switch { width: 100%; gap: 3px; padding: 3px; }
-  .experience-option { flex: 1; min-width: 0; font-size: 11px; gap: 5px; padding: 9px 5px; }
+  .experience-option { flex: 1; min-width: 0; min-height: 38px; font-size: 13px; gap: 6px; padding: 6px; }
   .experience-indicator { width: 6px; height: 6px; flex: none; }
-  html { scroll-padding-top: 210px; }
+  /* On phones the header scrolls away; the bottom Call/WhatsApp bar stays */
+  .site-header, .store-header { position: static; }
+  html { scroll-padding-top: 16px; }
 }
 @media (prefers-reduced-motion: reduce) {
   .experience-option { transition: none; }

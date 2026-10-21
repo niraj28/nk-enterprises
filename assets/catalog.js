@@ -35,7 +35,7 @@ window.NK_STORE = {
         "Plug-in, 230 V"
       ],
       "stock": 50,
-      "festive": true
+      "festive": false
     },
     {
       "id": "rice-lights-30m",
@@ -52,7 +52,7 @@ window.NK_STORE = {
         "Plug-in, 230 V"
       ],
       "stock": 30,
-      "festive": true
+      "festive": false
     },
     {
       "id": "copper-fairy-lights",
@@ -69,7 +69,7 @@ window.NK_STORE = {
         "Very low heat"
       ],
       "stock": 40,
-      "festive": true
+      "festive": false
     },
     {
       "id": "cotton-ball-lights",
@@ -86,7 +86,7 @@ window.NK_STORE = {
         "Bedroom and puja room décor"
       ],
       "stock": 30,
-      "festive": true
+      "festive": false
     },
     {
       "id": "curtain-3x3",
@@ -120,7 +120,7 @@ window.NK_STORE = {
         "USB or adapter"
       ],
       "stock": 15,
-      "festive": true
+      "festive": false
     },
     {
       "id": "star-curtain",
@@ -154,7 +154,7 @@ window.NK_STORE = {
         "Plug-in"
       ],
       "stock": 25,
-      "festive": true
+      "festive": false
     },
     {
       "id": "meteor-shower",
@@ -171,7 +171,7 @@ window.NK_STORE = {
         "Plug-in"
       ],
       "stock": 20,
-      "festive": true
+      "festive": false
     },
     {
       "id": "electric-diya-6",
@@ -188,7 +188,7 @@ window.NK_STORE = {
         "Reusable every year"
       ],
       "stock": 40,
-      "festive": true
+      "festive": false
     },
     {
       "id": "water-sensor-diya-6",
@@ -222,7 +222,7 @@ window.NK_STORE = {
         "For rangoli and tables"
       ],
       "stock": 30,
-      "festive": true
+      "festive": false
     },
     {
       "id": "net-lights",
@@ -239,7 +239,7 @@ window.NK_STORE = {
         "Plug-in, outdoor use under shelter"
       ],
       "stock": 20,
-      "festive": true
+      "festive": false
     },
     {
       "id": "rope-light-10m",
@@ -256,7 +256,7 @@ window.NK_STORE = {
         "Plug-in"
       ],
       "stock": 20,
-      "festive": true
+      "festive": false
     },
     {
       "id": "solar-fairy-lights",
@@ -290,7 +290,7 @@ window.NK_STORE = {
         "Plug-in"
       ],
       "stock": 10,
-      "festive": true
+      "festive": false
     },
     {
       "id": "rgb-strip-5m",
@@ -307,7 +307,7 @@ window.NK_STORE = {
         "For TV units, ceilings, mandirs"
       ],
       "stock": 20,
-      "festive": true
+      "festive": false
     },
     {
       "id": "smart-string-app",
@@ -324,7 +324,7 @@ window.NK_STORE = {
         "USB adapter included"
       ],
       "stock": 10,
-      "festive": true
+      "festive": false
     },
     {
       "id": "led-kandil",

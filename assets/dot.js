@@ -127,6 +127,7 @@
   /* ---------- styles ---------- */
   const css = `
   .dot-root{--dot-navy:#06275f;--dot-yellow:#ffc72c;--dot-ink:#18223a;--dot-soft:#eef3fb;--dot-line:#d6e0f0;font-family:"Hind","Segoe UI",system-ui,sans-serif;font-size:16px;line-height:1.5;color:var(--dot-ink)}
+  .dot-root [hidden]{display:none!important}
   .dot-launch{position:fixed;right:max(16px,env(safe-area-inset-right));bottom:calc(var(--dot-offset,20px) + env(safe-area-inset-bottom));z-index:60;width:62px;height:62px;border-radius:50%;border:0;cursor:pointer;background:radial-gradient(circle at 35% 30%,#ffe27a,var(--dot-yellow) 55%,#e9a800);box-shadow:0 10px 26px -8px rgba(6,39,95,.55),0 0 0 4px rgba(255,255,255,.9);display:grid;place-items:center;transition:transform .15s}
   .dot-launch:hover{transform:scale(1.06)}
   .dot-launch:focus-visible,.dot-panel button:focus-visible,.dot-panel a:focus-visible,.dot-panel input:focus-visible{outline:3px solid var(--dot-navy);outline-offset:2px}
