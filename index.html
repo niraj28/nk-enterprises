@@ -16,7 +16,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700&family=Hind:wght@400;500;600;700&display=swap">
-  <link rel="stylesheet" href="assets/style.css?v=4">
+  <link rel="stylesheet" href="assets/style.css?v=5">
   <!-- Google AdSense (needed for site verification; ads only show after approval) -->
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6116067692659093" crossorigin="anonymous"></script>
   <script type="application/ld+json">
@@ -125,7 +125,7 @@
         <article class="plan"><span class="icon"><svg class="i"><use href="#i-cap"/></svg></span><h3>Child education &amp; marriage</h3><p>Plans that pay out when your child needs money for higher studies or marriage.</p></article>
         <article class="plan"><span class="icon"><svg class="i"><use href="#i-sun"/></svg></span><h3>Retirement &amp; pension</h3><p>Build a regular income for the years after you stop working.</p></article>
         <article class="plan"><span class="icon"><svg class="i"><use href="#i-coins"/></svg></span><h3>Savings &amp; endowment</h3><p>Life cover plus a lump sum at maturity, for protection and savings together.</p></article>
-        <article class="plan"><span class="icon"><svg class="i"><use href="#i-heart"/></svg></span><h3>Health cover</h3><p>Help with hospital and medical costs for you and your family.</p></article>
+        <article class="plan"><span class="icon"><svg class="i"><use href="#i-heart"/></svg></span><h3>Health cover</h3><p>LIC's health plans, such as cancer cover, to help with big medical costs.</p></article>
         <article class="plan"><span class="icon"><svg class="i"><use href="#i-file"/></svg></span><h3>Premium &amp; claim help</h3><p>Due-date reminders, and help filing claim, maturity, loan and nomination forms.</p><a href="blog/missed-premium.html">Missed a premium? →</a></article>
       </div>
     </div>
@@ -245,7 +245,7 @@
       <div><h4>Explore</h4><ul><li><a href="#plans">Plans</a></li><li><a href="#cover">Cover check</a></li><li><a href="durga-puja/">Festival card</a></li><li><a href="blog/">Insurance tips</a></li></ul></div>
       <div><h4>Contact</h4><ul><li><a href="tel:+919431487230">9431487230</a></li><li><a href="tel:+918271254193">8271254193</a></li><li><a href="https://wa.me/919431487230" target="_blank" rel="noopener">WhatsApp</a></li></ul></div>
     </div>
-    <div class="legal"><span>© 2026 N.K.Enterprises. Insurance is the subject matter of solicitation.</span><a href="privacy.html">Privacy policy</a></div>
+    <div class="legal"><span>© 2026 N.K.Enterprises. Insurance is the subject matter of solicitation. This is the personal website of an authorised LIC agent, not the official website of Life Insurance Corporation of India. For official information visit <a href="https://licindia.in" rel="noopener" target="_blank">licindia.in</a>.</span><a href="privacy.html">Privacy policy</a></div>
   </div>
 </footer>
 
@@ -265,8 +265,10 @@
   function update() {
     const income = num($("income")), loans = num($("loans")), have = num($("existing"));
     const need = Math.max(0, Math.round((income * 10 + loans - have) / 1e5) * 1e5);
-    $("amt").textContent = need ? "₹" + words(need) : "You're well covered";
-    const msg = `Namaste Surendra ji, I used the cover check on your website.\nYearly income: ₹${inr(income)}\nLoans: ₹${inr(loans)}\nExisting cover: ₹${inr(have)}\nSuggested cover: ₹${words(need)}\nPlease suggest suitable LIC plans.`;
+    $("amt").textContent = !income ? "Enter your income" : need ? "₹" + words(need) : "Your cover looks enough";
+    const result = !income ? "" : need ? `Suggested cover: ₹${words(need)}\nPlease suggest suitable LIC plans.` : "My existing cover looks enough. Please review my policies.";
+    const msg = income ? `Namaste Surendra ji, I used the cover check on your website.\nYearly income: ₹${inr(income)}\nLoans: ₹${inr(loans)}\nExisting cover: ₹${inr(have)}\n${result}`
+                       : "Namaste Surendra ji, please help me work out how much life cover my family needs.";
     $("calcWa").href = "https://wa.me/919431487230?text=" + encodeURIComponent(msg);
   }
   ["income", "loans", "existing"].forEach(id => {

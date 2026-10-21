@@ -272,3 +272,12 @@ svg.i { fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: rou
 
 /* The hidden attribute always wins over component display rules */
 [hidden] { display: none !important; }
+
+/* Related guides at the end of each article */
+.related { border-top: 1px solid var(--blue-line); padding-top: 22px; margin-top: 10px; display: grid; gap: 10px; }
+.related h2 { font-size: 22px; margin: 0; }
+.related ul { list-style: none; padding: 0; margin: 0; display: grid; gap: 8px; }
+.related li a { display: block; padding: 14px 16px; border: 1px solid var(--blue-line); border-radius: 12px; background: #fff; font-weight: 600; text-decoration: none; color: var(--blue-ink); }
+.related li a:hover { border-color: currentColor; }
+.related-all { font-weight: 700; }
+.site-footer .legal span { flex: 1 1 420px; }

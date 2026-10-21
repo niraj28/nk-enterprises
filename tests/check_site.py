@@ -52,5 +52,10 @@ for path in pages:
     if 'noindex' not in text and path.name!='404.html':
         for tag in ('rel="canonical"','og:title','og:image','name="description"'):
             if tag not in text: errors.append(f'{path.relative_to(ROOT)}: missing {tag}')
+for path in (ROOT/'blog').glob('*.html'):
+    if path.name!='index.html':
+        t=path.read_text()
+        if 'class="related"' not in t or 'ld+json' not in t: errors.append(f'{path.relative_to(ROOT)}: missing related guides or structured data')
+assert "Enter your income" in insurance
 if errors: raise SystemExit('\n'.join(errors))
 print(f'PASS: {len(pages)} HTML pages, all local links/anchors, {len(products)} product records and assets, sitemap, LIC calculator and festival routes.')
