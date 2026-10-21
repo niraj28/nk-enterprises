@@ -129,8 +129,10 @@
     e.preventDefault(); if (!entries().length) { $('#checkout-dialog').close(); toast('Your bag is empty. Add a product to prepare an enquiry.'); return; }
     const data = new FormData(e.currentTarget);
     const name = String(data.get('name')).trim(), phone = String(data.get('phone')).trim(), city = String(data.get('city')).trim();
-    if (!name || !city || phone.replace(/\D/g, '').length < 7) { toast('Please enter your name, city, and a valid phone number.'); return; }
-    enquiry = ['N.K.ENTERPRISES — WHATSAPP ORDER REQUEST', 'Please confirm availability and send me a final quote. Sample catalog — not a confirmed order.', '', `Name: ${name}`, `Phone: ${phone}`, `City: ${city}`, '', ...entries().map(({ p, qty }) => `${p.name} — ${p.color}\n  Qty: ${qty} × ${money(p.price)} = ${money(p.price * qty)}\n  View: ${productUrl(p.id)}`), '', `Sample subtotal: ${money(subtotal())}`, 'Final prices, taxes, stock, delivery, warranty and return terms require confirmation.', 'No payment has been made and no stock is reserved.', '', `Notes: ${String(data.get('notes')).trim() || 'None'}`, '', `Shop: ${productUrl()}`].join('\n');
+    if (!name || !city) { toast('Please enter your name and area / town.'); return; }
+    if (phone && phone.replace(/\D/g, '').length < 7) { toast('Please check the phone number, or leave it empty.'); return; }
+    const notes = String(data.get('notes')).trim();
+    enquiry = ['Namaste! 🙏 I would like to order these Diwali lights from N.K.Enterprises 🪔', '', `Name: ${name}`, ...(phone ? [`Phone: ${phone}`] : []), `Area / town: ${city}`, '', ...entries().map(({ p, qty }, i) => `${i + 1}. ${p.name} (${p.color})\n   ${qty} × ${money(p.price)} = ${money(p.price * qty)}\n   ${productUrl(p.id)}`), '', `Total (website price): ${money(subtotal())}`, ...(notes ? ['', `Note: ${notes}`] : []), '', 'Please confirm availability and the final price.', `Shop: ${productUrl()}`].join('\n');
     $('#enquiry-text').value = enquiry; $('#checkout-form').hidden = true; $('#enquiry-result').hidden = false;
     const channel = String(config.salesWhatsApp || '');
     $('#whatsapp-enquiry').hidden = !/^\d{10,15}$/.test(channel);
