@@ -76,6 +76,8 @@
     $('#saved-only').addEventListener('change', e => { state.saved = e.target.checked; syncURL(); renderProducts(); });
     $('#reset').addEventListener('click', reset); $('#empty-reset').addEventListener('click', reset);
   }
+  // Full links back to the website, so the WhatsApp message opens the product
+  function productUrl(id) { const u = new URL(`${base}shop/`, location.href); if (id) u.searchParams.set('product', id); return u.href; }
   function show(dialog) { if (!dialog.open) dialog.showModal(); }
   function productDetails(id) {
     const p = byId.get(id); if (!p) return;
@@ -127,7 +129,7 @@
     const data = new FormData(e.currentTarget);
     const name = String(data.get('name')).trim(), phone = String(data.get('phone')).trim(), city = String(data.get('city')).trim();
     if (!name || !city || phone.replace(/\D/g, '').length < 7) { toast('Please enter your name, city, and a valid phone number.'); return; }
-    enquiry = ['N.K.ENTERPRISES — WHATSAPP ORDER REQUEST', 'Please confirm availability and send me a final quote. Sample catalog — not a confirmed order.', '', `Name: ${name}`, `Phone: ${phone}`, `City: ${city}`, '', ...entries().map(({ p, qty }) => `${p.name} (${p.id}) — ${p.color}\n  Qty: ${qty} × ${money(p.price)} = ${money(p.price * qty)}`), '', `Sample subtotal: ${money(subtotal())}`, 'Final prices, taxes, stock, delivery, warranty and return terms require confirmation.', 'No payment has been made and no stock is reserved.', '', `Notes: ${String(data.get('notes')).trim() || 'None'}`].join('\n');
+    enquiry = ['N.K.ENTERPRISES — WHATSAPP ORDER REQUEST', 'Please confirm availability and send me a final quote. Sample catalog — not a confirmed order.', '', `Name: ${name}`, `Phone: ${phone}`, `City: ${city}`, '', ...entries().map(({ p, qty }) => `${p.name} — ${p.color}\n  Qty: ${qty} × ${money(p.price)} = ${money(p.price * qty)}\n  View: ${productUrl(p.id)}`), '', `Sample subtotal: ${money(subtotal())}`, 'Final prices, taxes, stock, delivery, warranty and return terms require confirmation.', 'No payment has been made and no stock is reserved.', '', `Notes: ${String(data.get('notes')).trim() || 'None'}`, '', `Shop: ${productUrl()}`].join('\n');
     $('#enquiry-text').value = enquiry; $('#checkout-form').hidden = true; $('#enquiry-result').hidden = false;
     const channel = String(config.salesWhatsApp || '');
     $('#whatsapp-enquiry').hidden = !/^\d{10,15}$/.test(channel);
@@ -145,4 +147,5 @@
   function legacyHash() { if (!isShop && ['#plans', '#cover', '#contact', '#festival'].includes(location.hash)) location.replace(`${base}insurance/${location.hash}`); }
   window.addEventListener('hashchange', legacyHash); legacyHash();
   updateCount(); renderProducts();
+  if (isShop && byId.has(params.get('product'))) productDetails(params.get('product'));
 })();
