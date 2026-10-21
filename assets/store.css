@@ -1188,3 +1188,32 @@ dialog {
   transform:none}
 }
 
+
+/* ---------- Diwali special band ---------- */
+.diwali-band {
+  position:relative; overflow:hidden; margin-top:8px; margin-bottom:8px;
+  display:grid; grid-template-columns:minmax(0,1.4fr) minmax(0,.6fr); gap:24px; align-items:center;
+  padding:32px; border-radius:24px; color:#fff3d6;
+  background:radial-gradient(80% 120% at 85% 0%, #6a34b0 0, #2c0f5c 55%, #160634 100%)}
+.diwali-copy { display:grid; gap:14px; position:relative; z-index:1}
+.diwali-eyebrow { color:#ffd65a; font-weight:700; letter-spacing:.12em; font-size:13px}
+.diwali-band h2 { margin:0; color:#fff; font-size:clamp(28px,4.5vw,40px); line-height:1.1; text-wrap:balance}
+.diwali-band p { margin:0; color:#e6dcff; max-width:56ch}
+.diwali-chips { display:flex; flex-wrap:wrap; gap:8px}
+.diwali-chips a { padding:8px 14px; border-radius:999px; border:1px solid rgba(255,214,90,.5); color:#ffe9a8; font-weight:600; font-size:14px; background:rgba(255,255,255,.06)}
+.diwali-chips a:hover { background:rgba(255,214,90,.18)}
+.diwali-actions { display:flex; flex-wrap:wrap; gap:10px}
+.diwali-btn { display:inline-flex; align-items:center; justify-content:center; padding:12px 22px; border-radius:999px; font-weight:700; border:2px solid rgba(255,255,255,.55); color:#fff}
+.diwali-btn.primary { background:#25b860; border-color:#25b860}
+.diwali-btn:hover { transform:translateY(-1px)}
+.diwali-note { font-size:13px; color:#c9b8f2 !important}
+.diwali-art { position:relative; height:220px}
+.diwali-art span { position:absolute; width:14px; height:14px; border-radius:50%; background:#ffd65a; box-shadow:0 0 18px 6px rgba(255,200,80,.55)}
+.diwali-art span:nth-child(1){left:10%;top:12%} .diwali-art span:nth-child(2){left:38%;top:30%;background:#ff8a5c}
+.diwali-art span:nth-child(3){left:66%;top:14%} .diwali-art span:nth-child(4){left:84%;top:40%;background:#9be0a8}
+.diwali-art span:nth-child(5){left:22%;top:58%;background:#ff8a5c} .diwali-art span:nth-child(6){left:52%;top:70%}
+.diwali-art span:nth-child(7){left:78%;top:80%;background:#ff8a5c}
+@media (prefers-reduced-motion:no-preference){ .diwali-art span{ animation:twinkle 2.4s ease-in-out infinite} .diwali-art span:nth-child(even){animation-delay:1.2s} }
+@keyframes twinkle { 50% { opacity:.35; transform:scale(.8)} }
+@media (max-width:760px){ .diwali-band{ grid-template-columns:1fr; padding:24px 20px} .diwali-art{ display:none} .diwali-btn{ flex:1 1 100%} }
+.product-tag.festive { background:#2c0f5c; color:#ffd65a}
