@@ -4,332 +4,344 @@ window.NK_STORE = {
   "salesWhatsApp": "919431487230",
   "products": [
     {
-      "id": "diwali-rice-lights",
-      "name": "Diwali Rice Lights, 15 m",
-      "category": "Diwali Lights",
+      "id": "rice-lights-10m",
+      "name": "Rice Lights (Jhalar), 10 m",
+      "category": "String & rice lights",
+      "price": 149,
+      "image": "lights.svg",
+      "color": "Multicolour",
+      "summary": "Plug-in · 8 flashing modes",
+      "specs": [
+        "10 m string, about 40 LEDs",
+        "8 flashing modes with controller",
+        "Plug-in, 230 V",
+        "Indoor and balcony use"
+      ],
+      "stock": 60,
+      "festive": true
+    },
+    {
+      "id": "rice-lights-15m",
+      "name": "Rice Lights (Jhalar), 15 m",
+      "category": "String & rice lights",
       "price": 249,
       "image": "lights.svg",
       "color": "Warm white",
-      "summary": "Plug-in · 8 light modes",
+      "summary": "Plug-in · 8 flashing modes",
       "specs": [
-        "15 m long string",
+        "15 m string",
+        "Warm white glow",
         "8 flashing modes",
-        "Indoor and balcony use",
-        "Plug-in, no batteries"
+        "Plug-in, 230 V"
+      ],
+      "stock": 50,
+      "festive": true
+    },
+    {
+      "id": "rice-lights-30m",
+      "name": "Rice Lights, 30 m Long Run",
+      "category": "String & rice lights",
+      "price": 449,
+      "image": "lights.svg",
+      "color": "Multicolour",
+      "summary": "For full house fronts",
+      "specs": [
+        "30 m single run",
+        "Covers a full balcony or house front",
+        "8 modes",
+        "Plug-in, 230 V"
+      ],
+      "stock": 30,
+      "festive": true
+    },
+    {
+      "id": "copper-fairy-lights",
+      "name": "Copper Wire Fairy Lights, 10 m",
+      "category": "String & rice lights",
+      "price": 199,
+      "image": "lights.svg",
+      "color": "Warm white",
+      "summary": "Thin bendable wire · USB",
+      "specs": [
+        "10 m thin copper wire",
+        "Bend around plants, frames, jars",
+        "USB powered",
+        "Very low heat"
       ],
       "stock": 40,
       "festive": true
     },
     {
-      "id": "diwali-curtain-lights",
-      "name": "LED Curtain Lights, 3 × 3 m",
-      "category": "Diwali Lights",
-      "price": 899,
+      "id": "cotton-ball-lights",
+      "name": "Cotton Ball String Lights, 20 balls",
+      "category": "String & rice lights",
+      "price": 349,
       "image": "lights.svg",
-      "color": "Multicolour",
+      "color": "Pastel mix",
+      "summary": "Soft glow · Room décor",
+      "specs": [
+        "20 soft cotton balls",
+        "3 m string",
+        "Plug-in or USB",
+        "Bedroom and puja room décor"
+      ],
+      "stock": 30,
+      "festive": true
+    },
+    {
+      "id": "curtain-3x3",
+      "name": "LED Curtain Lights, 3 × 3 m",
+      "category": "Curtain & icicle lights",
+      "price": 899,
+      "image": "curtain.svg",
+      "color": "Warm white",
       "summary": "Windows and doors · 8 modes",
       "specs": [
         "3 m × 3 m curtain",
+        "300 LEDs",
         "Hooks for windows and doors",
-        "8 light modes",
+        "8 light modes"
+      ],
+      "stock": 25,
+      "festive": true
+    },
+    {
+      "id": "curtain-remote",
+      "name": "LED Curtain Lights with Remote, 3 × 2 m",
+      "category": "Curtain & icicle lights",
+      "price": 1199,
+      "image": "curtain.svg",
+      "color": "Multicolour",
+      "summary": "Remote control · Timer",
+      "specs": [
+        "3 m × 2 m curtain",
+        "Remote with timer",
+        "8 modes and brightness",
+        "USB or adapter"
+      ],
+      "stock": 15,
+      "festive": true
+    },
+    {
+      "id": "star-curtain",
+      "name": "Star Curtain Lights, 12 stars",
+      "category": "Curtain & icicle lights",
+      "price": 699,
+      "image": "curtain.svg",
+      "color": "Warm white",
+      "summary": "Twinkling stars · Windows",
+      "specs": [
+        "12 hanging stars",
+        "2.5 m wide",
+        "8 modes",
         "Plug-in"
       ],
       "stock": 20,
       "festive": true
     },
     {
-      "id": "led-bulb-4pack",
-      "name": "9W LED Bulb, Pack of 4",
-      "category": "LED Bulbs",
-      "price": 349,
-      "image": "bulb.svg",
-      "color": "Cool day light",
-      "summary": "B22 base · Energy saving",
-      "specs": [
-        "9 watt each",
-        "B22 standard holder",
-        "Cool day light",
-        "Pack of 4"
-      ],
-      "stock": 30,
-      "festive": true
-    },
-    {
-      "id": "colour-bulb-remote",
-      "name": "Colour LED Bulb with Remote",
-      "category": "LED Bulbs",
+      "id": "icicle-lights",
+      "name": "Icicle (Jhumar) Lights, 4 m",
+      "category": "Curtain & icicle lights",
       "price": 499,
-      "image": "bulb.svg",
-      "color": "16 colours",
-      "summary": "Remote control · Festive colours",
+      "image": "curtain.svg",
+      "color": "Cool white",
+      "summary": "Hanging drops for balconies",
       "specs": [
-        "16 colours and white",
-        "Remote included",
-        "B22 holder",
-        "Brightness control"
-      ],
-      "stock": 15,
-      "festive": true
-    },
-    {
-      "id": "extension-spike-guard",
-      "name": "4-Socket Extension Board with Spike Guard",
-      "category": "Power & Charging",
-      "price": 499,
-      "image": "extension.svg",
-      "color": "White",
-      "summary": "Surge protection · Master switch",
-      "specs": [
-        "4 universal sockets",
-        "Spike and surge protection",
-        "Master switch with light",
-        "Long cord"
+        "4 m wide, drops of different lengths",
+        "For balcony edges and roof lines",
+        "8 modes",
+        "Plug-in"
       ],
       "stock": 25,
       "festive": true
     },
     {
-      "id": "fast-charger-20w",
-      "name": "20W Fast Charger with USB-C Cable",
-      "category": "Power & Charging",
-      "price": 399,
-      "image": "charger.svg",
-      "color": "White",
-      "summary": "USB-C · Fast charging",
+      "id": "meteor-shower",
+      "name": "Meteor Shower Tube Lights, 8 tubes",
+      "category": "Curtain & icicle lights",
+      "price": 799,
+      "image": "curtain.svg",
+      "color": "Cool white",
+      "summary": "Falling-star effect",
       "specs": [
-        "20 W fast charging",
-        "USB-C cable included",
-        "Works with most phones",
-        "BIS certified (confirm at purchase)"
+        "8 tubes, 50 cm each",
+        "Falling raindrop effect",
+        "Great on trees and walls",
+        "Plug-in"
+      ],
+      "stock": 20,
+      "festive": true
+    },
+    {
+      "id": "electric-diya-6",
+      "name": "Electric LED Diyas, pack of 6",
+      "category": "Diyas & candles",
+      "price": 299,
+      "image": "diya.svg",
+      "color": "Warm yellow",
+      "summary": "Battery · No oil, no fire",
+      "specs": [
+        "6 diyas with flickering LED",
+        "Battery operated (included)",
+        "Safe around children",
+        "Reusable every year"
+      ],
+      "stock": 40,
+      "festive": true
+    },
+    {
+      "id": "water-sensor-diya-6",
+      "name": "Water-Sensor Diyas, pack of 6",
+      "category": "Diyas & candles",
+      "price": 249,
+      "image": "diya.svg",
+      "color": "Warm yellow",
+      "summary": "Lights up when you add water",
+      "specs": [
+        "Glows when water is poured in",
+        "No battery change needed for the season",
+        "Pack of 6",
+        "Safe, no flame"
+      ],
+      "stock": 50,
+      "festive": true
+    },
+    {
+      "id": "flameless-candles-12",
+      "name": "Flameless LED Candles, set of 12",
+      "category": "Diyas & candles",
+      "price": 499,
+      "image": "diya.svg",
+      "color": "Warm white",
+      "summary": "Flicker effect · Battery",
+      "specs": [
+        "12 tea-light candles",
+        "Realistic flicker",
+        "Batteries included",
+        "For rangoli and tables"
       ],
       "stock": 30,
       "festive": true
     },
     {
-      "id": "power-bank-10000",
-      "name": "10000 mAh Power Bank",
-      "category": "Power & Charging",
+      "id": "net-lights",
+      "name": "Net Lights for Bushes, 1.5 × 1.5 m",
+      "category": "Outdoor & solar",
+      "price": 449,
+      "image": "lights.svg",
+      "color": "Multicolour",
+      "summary": "Covers plants and gates",
+      "specs": [
+        "1.5 m × 1.5 m net",
+        "Even coverage on bushes and grills",
+        "8 modes",
+        "Plug-in, outdoor use under shelter"
+      ],
+      "stock": 20,
+      "festive": true
+    },
+    {
+      "id": "rope-light-10m",
+      "name": "LED Rope Light, 10 m",
+      "category": "Outdoor & solar",
+      "price": 699,
+      "image": "strip.svg",
+      "color": "Warm white",
+      "summary": "Outline gates and roofs",
+      "specs": [
+        "10 m flexible tube",
+        "Bright, even line of light",
+        "Weather-resistant tube",
+        "Plug-in"
+      ],
+      "stock": 20,
+      "festive": true
+    },
+    {
+      "id": "solar-fairy-lights",
+      "name": "Solar Fairy Lights, 12 m",
+      "category": "Outdoor & solar",
+      "price": 599,
+      "image": "lights.svg",
+      "color": "Warm white",
+      "summary": "No wiring · Charges by day",
+      "specs": [
+        "12 m, 100 LEDs",
+        "Solar panel with stake",
+        "Turns on automatically at dusk",
+        "For gardens and terraces"
+      ],
+      "stock": 15,
+      "festive": true
+    },
+    {
+      "id": "festoon-bulbs-10m",
+      "name": "Festoon Bulb String, 10 m",
+      "category": "Outdoor & solar",
+      "price": 1299,
+      "image": "bulb.svg",
+      "color": "Warm white",
+      "summary": "Big bulbs for terraces",
+      "specs": [
+        "10 m with 15 bulbs",
+        "Café-style décor",
+        "For terraces and courtyards",
+        "Plug-in"
+      ],
+      "stock": 10,
+      "festive": true
+    },
+    {
+      "id": "rgb-strip-5m",
+      "name": "RGB LED Strip with Remote, 5 m",
+      "category": "Smart & strip lights",
       "price": 899,
-      "image": "powerbank.svg",
-      "color": "Black",
-      "summary": "Two outputs · Slim design",
+      "image": "strip.svg",
+      "color": "16 colours",
+      "summary": "Stick-on · Remote control",
       "specs": [
-        "10000 mAh capacity",
-        "Dual USB output",
-        "USB-C input",
-        "Slim and light"
+        "5 m self-adhesive strip",
+        "16 colours and effects",
+        "Remote included",
+        "For TV units, ceilings, mandirs"
       ],
-      "stock": 18,
+      "stock": 20,
       "festive": true
     },
     {
-      "id": "electric-kettle-15",
-      "name": "1.5 L Electric Kettle",
-      "category": "Diwali Gifts",
-      "price": 799,
-      "image": "kettle.svg",
-      "color": "Steel",
-      "summary": "Auto shut-off · Great gift",
-      "specs": [
-        "1.5 litre",
-        "Stainless steel",
-        "Auto shut-off",
-        "Cordless pouring"
-      ],
-      "stock": 12,
-      "festive": true
-    },
-    {
-      "id": "pulse-pro",
-      "name": "Pulse Pro Wireless",
-      "category": "Audio",
-      "price": 3499,
-      "image": "headphones.svg",
-      "color": "Graphite",
-      "summary": "40-hour battery · Noise isolation",
-      "specs": [
-        "40-hour playback",
-        "Bluetooth connectivity",
-        "Foldable over-ear design",
-        "USB-C charging"
-      ],
-      "stock": 8
-    },
-    {
-      "id": "nova-5g",
-      "name": "Nova 5G",
-      "category": "Smartphones",
-      "price": 15999,
-      "image": "phone.svg",
-      "color": "Sage",
-      "summary": "128 GB storage · 6.5-inch display",
-      "specs": [
-        "128 GB storage",
-        "6 GB RAM",
-        "6.5-inch display",
-        "5G connectivity"
-      ],
-      "stock": 6
-    },
-    {
-      "id": "airbook-14",
-      "name": "AirBook 14",
-      "category": "Laptops",
-      "price": 42999,
-      "image": "laptop.svg",
-      "color": "Slate",
-      "summary": "14-inch display · 512 GB SSD",
-      "specs": [
-        "14-inch Full HD display",
-        "16 GB RAM",
-        "512 GB SSD",
-        "Backlit keyboard"
-      ],
-      "stock": 4
-    },
-    {
-      "id": "orbit-fit",
-      "name": "Orbit Fit",
-      "category": "Wearables",
-      "price": 2499,
-      "image": "watch.svg",
-      "color": "Sage",
-      "summary": "AMOLED display · Everyday activity",
-      "specs": [
-        "1.8-inch AMOLED display",
-        "Activity tracking",
-        "Bluetooth connectivity",
-        "Magnetic charging"
-      ],
-      "stock": 12
-    },
-    {
-      "id": "pods-mini",
-      "name": "Pods Mini",
-      "category": "Audio",
-      "price": 1799,
-      "image": "earbuds.svg",
-      "color": "Cloud",
-      "summary": "Compact case · 24-hour playback",
-      "specs": [
-        "24 hours with charging case",
-        "Touch controls",
-        "USB-C charging",
-        "Three ear-tip sizes"
-      ],
-      "stock": 15
-    },
-    {
-      "id": "roam-speaker",
-      "name": "Roam Portable Speaker",
-      "category": "Audio",
-      "price": 2299,
-      "image": "speaker.svg",
-      "color": "Forest",
-      "summary": "Portable sound · 12-hour playback",
-      "specs": [
-        "12-hour playback",
-        "Bluetooth connectivity",
-        "Compact woven finish",
-        "USB-C charging"
-      ],
-      "stock": 9
-    },
-    {
-      "id": "power-65",
-      "name": "Power 65 USB-C Charger",
-      "category": "Accessories",
+      "id": "smart-string-app",
+      "name": "App-Controlled Smart String Lights, 10 m",
+      "category": "Smart & strip lights",
       "price": 1499,
-      "image": "charger.svg",
-      "color": "Cloud",
-      "summary": "65 W output · USB-C charging",
+      "image": "strip.svg",
+      "color": "Millions of colours",
+      "summary": "Phone app · Music sync",
       "specs": [
-        "65 W maximum output",
-        "USB-C port",
-        "Compact wall adapter",
-        "Cable included"
+        "10 m string",
+        "Control from your phone",
+        "Music sync and timers",
+        "USB adapter included"
       ],
-      "stock": 20
+      "stock": 10,
+      "festive": true
     },
     {
-      "id": "frame-m1",
-      "name": "Frame M1 Camera",
-      "category": "Cameras",
-      "price": 28999,
-      "image": "camera.svg",
-      "color": "Graphite",
-      "summary": "24 MP sensor · Everyday creativity",
+      "id": "led-kandil",
+      "name": "LED Akash Kandil (Lantern)",
+      "category": "Lanterns & decor",
+      "price": 399,
+      "image": "lantern.svg",
+      "color": "Red and gold",
+      "summary": "Hanging lantern with LED",
       "specs": [
-        "24 MP sensor",
-        "Interchangeable lens design",
-        "Full HD video",
-        "Kit lens included"
+        "Traditional kandil design",
+        "LED inside, plug-in",
+        "Folds flat for storage",
+        "For doorways and balconies"
       ],
-      "stock": 0
-    },
-    {
-      "id": "nova-plus",
-      "name": "Nova Plus",
-      "category": "Smartphones",
-      "price": 22999,
-      "image": "phone.svg",
-      "color": "Slate",
-      "summary": "256 GB storage · 6.7-inch display",
-      "specs": [
-        "256 GB storage",
-        "8 GB RAM",
-        "6.7-inch display",
-        "5G connectivity"
-      ],
-      "stock": 5
-    },
-    {
-      "id": "airbook-16",
-      "name": "AirBook 16",
-      "category": "Laptops",
-      "price": 56999,
-      "image": "laptop.svg",
-      "color": "Slate",
-      "summary": "16-inch display · 1 TB SSD",
-      "specs": [
-        "16-inch display",
-        "16 GB RAM",
-        "1 TB SSD",
-        "USB-C connectivity"
-      ],
-      "stock": 3
-    },
-    {
-      "id": "orbit-active",
-      "name": "Orbit Active",
-      "category": "Wearables",
-      "price": 3999,
-      "image": "watch.svg",
-      "color": "Sage",
-      "summary": "Built-in GPS · Outdoor activity",
-      "specs": [
-        "Built-in GPS",
-        "Activity tracking",
-        "AMOLED display",
-        "Magnetic charging"
-      ],
-      "stock": 7
-    },
-    {
-      "id": "power-30",
-      "name": "Power 30 USB-C Charger",
-      "category": "Accessories",
-      "price": 899,
-      "image": "charger.svg",
-      "color": "Cloud",
-      "summary": "30 W output · Travel-friendly",
-      "specs": [
-        "30 W maximum output",
-        "USB-C port",
-        "Compact wall adapter",
-        "Cable included"
-      ],
-      "stock": 18
+      "stock": 25,
+      "festive": true
     }
   ]
 };

@@ -36,7 +36,7 @@
   const categories = [...new Set(products.map(p => p.category))];
   const params = new URLSearchParams(location.search);
   const initialCategory = categories.includes(params.get('category')) ? params.get('category') : 'All products';
-  const state = { category: initialCategory, query: params.get('q') || '', sort: 'featured', max: 60000, available: false, saved: params.get('saved') === '1' };
+  const state = { category: initialCategory, query: params.get('q') || '', sort: 'featured', max: 2000, available: false, saved: params.get('saved') === '1' };
   function filtered() {
     const query = state.query.trim().toLocaleLowerCase();
     let list = products.filter(p => (state.category === 'All products' || p.category === state.category) && p.price <= state.max && (!state.available || p.stock > 0) && (!state.saved || saved.has(p.id)) && `${p.name} ${p.category} ${p.color} ${p.summary} ${p.specs.join(' ')}`.toLocaleLowerCase().includes(query));
@@ -60,8 +60,8 @@
     history.replaceState(null, '', location.pathname + (query.size ? '?' + query.toString() : '') + location.hash);
   }
   function reset() {
-    Object.assign(state, { category: 'All products', query: '', sort: 'featured', max: 60000, available: false, saved: false });
-    $('#search').value = ''; $('#sort').value = 'featured'; $('#max-price').value = 60000; $('#price-label').textContent = money(60000); $('#in-stock').checked = false; $('#saved-only').checked = false;
+    Object.assign(state, { category: 'All products', query: '', sort: 'featured', max: 2000, available: false, saved: false });
+    $('#search').value = ''; $('#sort').value = 'featured'; $('#max-price').value = 2000; $('#price-label').textContent = money(2000); $('#in-stock').checked = false; $('#saved-only').checked = false;
     document.querySelector('input[name="category"][value="All products"]').checked = true;
     syncURL(); renderProducts();
   }
