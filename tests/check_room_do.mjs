@@ -1,6 +1,8 @@
 // Durable Object glue check with fake sockets and storage. Run with macOS JavaScriptCore:
 // jsc -m tests/check_room_do.mjs
 globalThis.crypto = globalThis.crypto || { getRandomValues: (a) => { for (let i = 0; i < a.length; i++) a[i] = Math.floor(Math.random() * 2 ** 32) >>> 0; return a; } };
+globalThis.AbortController = globalThis.AbortController || class { constructor() { this.signal = {}; } abort() {} }; // Cloudflare has these; JavaScriptCore does not
+globalThis.clearTimeout = globalThis.clearTimeout || (() => {});
 const log = typeof print === "function" ? print : (m) => console.log(m);
 function assert(ok, msg) { if (!ok) throw new Error("FAIL: " + msg); }
 
@@ -64,4 +66,35 @@ for (let i = 0; i < 40 && host.last("room").seats[host.last("room").game.turn].k
 const after = host.last("room");
 assert(after.game.moveNo - before >= 1, "AI moved by itself");
 assert(after.seats[after.game.turn].kind === "human" || after.phase === "over", "AI loop stops at a human turn");
-log(`PASS: Durable Object glue (sockets, per-seat views, hibernation restore, multi-tab, AI loop: ${after.game.moveNo - before} AI moves).`);
+// with a model configured: the AI asks it (fake Gemini here), and falls back when it fails
+let calls = 0, failNext = false;
+globalThis.fetch = async (url, opts) => {
+  calls++;
+  const body = JSON.parse(opts.body);
+  assert(url.endsWith("/chat/completions") && body.messages[1].content.includes("Your options:"), "model request shape");
+  if (failNext) return { ok: false, status: 503, text: async () => "busy", json: async () => ({}) };
+  return { ok: true, status: 200, json: async () => ({ choices: [{ message: { content: '{"choice": 1, "say": "Gemini says hello."}' } }] }) };
+};
+store.clear(); sockets = [];
+room = new Room(ctx, { LLM_API_KEY: "test", LLM_API_BASE: "https://example.test/v1", LLM_MODEL: "m1" });
+const h = open();
+await say(h, { t: "hello", create: true, code: "GEMNI" });
+await say(h, { t: "sit", seat: 0, name: "Host" });
+for (const i of [1, 2, 3]) await say(h, { t: "ai", seat: i, on: true });
+await say(h, { t: "start" });
+let gv = h.last("room");
+const g0 = E.legalMoves({ chips: gv.game.chips, seqCells: gv.game.seqCells, hands: { 0: gv.game.hand } }, 0)[0];
+await say(h, { t: "move", type: g0.type, card: g0.card, cell: g0.cell });
+for (let i = 0; i < 60 && h.last("room").game.turn !== 0; i++) await new Promise((r) => setTimeout(r, 100));
+gv = h.last("room");
+const aiMoves = gv.log.filter((l) => l.k === "move" && l.seat !== 0);
+assert(calls >= 3 && aiMoves.length === 3 && aiMoves.every((m) => m.src === "llm"), "AI turns used the model: " + JSON.stringify(aiMoves.map((m) => m.src)));
+assert(gv.log.some((l) => l.k === "say" && l.text === "Gemini says hello."), "model's table talk shown");
+failNext = true;
+const g1 = E.legalMoves({ chips: gv.game.chips, seqCells: gv.game.seqCells, hands: { 0: gv.game.hand } }, 0)[0];
+await say(h, { t: "move", type: g1.type, card: g1.card, cell: g1.cell });
+for (let i = 0; i < 60 && h.last("room").game.turn !== 0; i++) await new Promise((r) => setTimeout(r, 100));
+const fb = h.last("room").log.filter((l) => l.k === "move" && l.seat !== 0).slice(-3);
+assert(fb.length === 3 && fb.every((m) => m.src === "brain"), "falls back to the brain when the model fails");
+
+log(`PASS: Durable Object glue (sockets, per-seat views, hibernation restore, multi-tab, AI loop: ${after.game.moveNo - before} AI moves, model turns and fallback).`);

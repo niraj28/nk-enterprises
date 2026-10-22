@@ -1,5 +1,5 @@
 // Online room checks. Run with macOS JavaScriptCore:
-// jsc sequence/engine.js sequence/brain.js sequence/lines.js sequence/room-core.js tests/check_room.js
+// jsc sequence/engine.js sequence/brain.js sequence/lines.js sequence/muse.js sequence/room-core.js tests/check_room.js
 const E = globalThis.SeqEngine, R = globalThis.SeqRoom;
 const out = typeof console !== "undefined" ? (m) => console.log(m) : print;
 function assert(ok, msg) { if (!ok) throw new Error("FAIL: " + (msg || "assertion")); }
@@ -88,6 +88,34 @@ assert(room.log.some((l) => l.k === "say" && l.seat === 3), "AI talks in online 
 // save/restore through JSON (what the Durable Object stores)
 const copy = new R.RoomCore(JSON.parse(JSON.stringify(room.toJSON())));
 assert(JSON.stringify(copy.view(2)) === JSON.stringify(room.view(2)), "room survives a save and reload");
+
+// AI turns through a language model: the prompt holds only the AI seat's own cards,
+// a good reply picks from the shortlist, a bad reply falls back, and a stale plan is ignored
+if (globalThis.SeqMuse) {
+  const r2 = new R.RoomCore(), h = { seat: -1 };
+  r2.handle(h, { t: "hello", create: true, code: "LLMAI" }, now, rand);
+  r2.handle(h, { t: "sit", seat: 0, name: "Host" }, now, rand);
+  [1, 2, 3].forEach((i) => r2.handle(h, { t: "ai", seat: i, on: true }, now, rand));
+  r2.handle(h, { t: "start" }, now, rand);
+  r2.handle(h, { t: "move", ...E.legalMoves(r2.state, 0)[0] }, now, rand);
+  const plan = r2.aiPlan(rand);
+  assert(plan && plan.seat === 1, "AI seat 1 to move");
+  const prompt = r2.promptFor(plan);
+  for (let o = 0; o < 4; o++) {
+    if (o === 1) continue;
+    const other = r2.state.hands[o].map(globalThis.SeqMuse.label).join(" ");
+    assert(!prompt.user.includes("Your hand: " + other), "prompt leaks seat " + o);
+  }
+  assert(r2.fromReply(plan, "nonsense") === null, "bad reply falls back");
+  const chosen = r2.fromReply(plan, '{"choice": 2, "say": "Watch this, friends."}');
+  assert(chosen && chosen.say === "Watch this, friends.", "good reply used");
+  assert(r2.fromReply(plan, '{"choice": 1, "say": "I have the queen of hearts"}').say === "", "card talk filtered");
+  const stale = r2.aiPlan(rand);
+  assert(r2.aiApply(plan, chosen.pick, chosen.say, "llm", rand), "apply chosen move");
+  assert(!r2.aiApply(stale, stale.pick, "", "brain", rand), "stale plan ignored");
+  const mv = r2.log.filter((l) => l.k === "move").pop(), sayLine = r2.log.filter((l) => l.k === "say").pop();
+  assert(mv.src === "llm" && sayLine.text === "Watch this, friends." && sayLine.seat === 1, "model's move and line logged");
+}
 
 // chat and play again
 send(c, { t: "chat", text: "gg <script>" });

@@ -4,8 +4,10 @@ One small Cloudflare Worker does two jobs for the game at digitallifenotes.blog/
 
 - **Online rooms**: friends play from their own phones. Each room is a Durable Object that
   holds the deck and every hand, so no player's browser ever receives another player's cards.
-- **Muse proxy** (optional): AI seats in local games ask Meta's Muse for moves and table talk.
-  The page can't hold an API key, so the Worker adds it.
+- **AI proxy**: AI seats ask Google Gemini for moves and table talk, in local games (through
+  the proxy route) and in online rooms (the room calls Gemini itself). The page can't hold an
+  API key, so the key lives only in the Worker as the secret `LLM_API_KEY`. If Gemini is busy,
+  slow (12 s in rooms) or over its free limit, the built-in brain plays that turn.
 
 Both fit in Cloudflare's **free plan**. Online rooms don't need a Muse key.
 
@@ -64,6 +66,6 @@ To test it from your own computer, add `http://localhost:8765` to `ALLOWED_ORIGI
 Tests (macOS has JavaScriptCore built in):
 ```
 J=/System/Library/Frameworks/JavaScriptCore.framework/Versions/A/Helpers/jsc
-$J sequence/engine.js sequence/brain.js sequence/lines.js sequence/room-core.js tests/check_room.js
+$J sequence/engine.js sequence/brain.js sequence/lines.js sequence/muse.js sequence/room-core.js tests/check_room.js
 $J -m tests/check_room_do.mjs
 ```

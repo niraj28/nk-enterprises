@@ -588,7 +588,8 @@
         const what = e.type === "remove"
           ? `${who} removed a ${TEAM[e.removedTeam]} chip at ${E.cellName(e.cell)} (${label(e.card)})`
           : `${who} played ${label(e.card)} on ${E.cellName(e.cell)}`;
-        log("move", `<b>${esc(what)}</b>${e.note ? " · " + esc(e.note) : ""}`, true);
+        const tag = e.src ? `<span class="src">${e.src === "llm" ? "Gemini" : "brain"}</span>` : "";
+        log("move", `<b>${esc(what)}</b>${e.note ? " · " + esc(e.note) : ""}${tag}`, true);
         latestMove = what + (e.note ? " · " + e.note : "");
       } else if (e.k === "say") {
         log("say", `<b>${esc(e.who)}:</b> ${esc(e.text)}`, true);

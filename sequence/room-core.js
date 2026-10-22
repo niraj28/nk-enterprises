@@ -202,13 +202,14 @@
       }
     }
 
-    play(seat, pick) {
+    play(seat, pick, src) {
       const m = pick.move;
       const res = E.applyMove(this.state, seat, m);
       this.lastCell = m.cell;
       this.recent = [m.cell, ...this.recent.filter((c) => c !== m.cell)].slice(0, 3);
       const note = pick.notes && !["positional", "uses a wild jack"].includes(pick.notes[0]) ? pick.notes[0] : "";
       const entry = { k: "move", seat, type: m.type, card: m.card, cell: m.cell, note };
+      if (src) entry.src = src; // "llm" or "brain" for AI moves
       if (m.type === "remove") entry.removedTeam = res.removedTeam;
       this.addLog(entry);
       this.lastText = "";
@@ -219,16 +220,45 @@
       return res;
     }
 
-    aiMove(rand) {
-      if (!this.aiPending()) return;
+    // AI turns come in two steps so the server can ask a language model in between:
+    // aiPlan() ranks the moves and picks a fallback; aiApply() plays the chosen one.
+    aiPlan(rand) {
+      if (!this.aiPending()) return null;
       const seat = this.state.turn;
       const ranked = B.analyse(this.state, seat, this.level);
-      const pick = B.pick(ranked, AI_STYLE[seat], rand, this.level);
-      const res = this.play(seat, pick);
-      if (this.seats[seat].takenOver) { /* a stand-in AI keeps quiet */ }
+      return { seat, moveNo: this.state.moveNo, ranked, pick: B.pick(ranked, AI_STYLE[seat], rand, this.level), quiet: !!this.seats[seat].takenOver };
+    }
+    // the prompt for the model: same one local games use, with only this seat's own cards
+    promptFor(plan) {
+      const M = root.SeqMuse;
+      const players = this.seats.map((s) => ({ name: s.name }));
+      const chat = this.log.filter((l) => l.k === "say").slice(-6).map((l) => ({ who: l.who, text: l.text }));
+      return M.buildPrompt(this.state, plan.seat, M.PERSONAS[plan.seat], players, plan.ranked.slice(0, 8), chat, this.level);
+    }
+    // turn the model's reply into a move; null means "use the fallback"
+    fromReply(plan, text) {
+      const M = root.SeqMuse, shortlist = plan.ranked.slice(0, 8);
+      const parsed = M.parseReply(text, shortlist.length);
+      if (!parsed) return null;
+      let pick = shortlist[parsed.choice];
+      const top = plan.ranked[0];
+      if (this.level !== "easy" && top.score >= 200 && pick.score < top.score - 150) pick = top; // never miss a win or an open four
+      return { pick, say: parsed.say };
+    }
+    aiApply(plan, pick, say, src, rand) {
+      if (!plan || !this.aiPending() || this.state.turn !== plan.seat || this.state.moveNo !== plan.moveNo) return false;
+      const seat = plan.seat;
+      const res = this.play(seat, pick, src);
+      if (plan.quiet) { /* a stand-in AI keeps quiet */ }
+      else if (say) { this.addLog({ k: "say", seat, who: this.seats[seat].name, text: say }); this.lastBanter = this.state.moveNo; }
       else this.banter(seat, this.eventFor(pick, res), seat, rand);
       this.react(seat, pick, res, rand);
       this.prelude();
+      return true;
+    }
+    aiMove(rand) {
+      const plan = this.aiPlan(rand);
+      if (plan) this.aiApply(plan, plan.pick, "", "brain", rand);
     }
 
     // ---- built-in table talk (same rules as local play) ----
