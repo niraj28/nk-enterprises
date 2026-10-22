@@ -1,5 +1,5 @@
-name = "muse-proxy"
-main = "muse-proxy.js"
+name = "sequence-game"
+main = "index.js"
 compatibility_date = "2026-09-01"
 
 [vars]
@@ -14,3 +14,12 @@ name = "RATE_LIMITER"
 type = "ratelimit"
 namespace_id = "1001"
 simple = { limit = 30, period = 60 }
+
+# Online rooms: one Durable Object per room (SQLite-backed, works on the free plan)
+[[durable_objects.bindings]]
+name = "ROOMS"
+class_name = "Room"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["Room"]

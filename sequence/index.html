@@ -20,7 +20,7 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700&family=Hind:wght@400;500;600;700&display=swap">
   <link rel="stylesheet" href="../assets/style.css?v=5">
   <link rel="stylesheet" href="../assets/navigation.css?v=3">
-  <link rel="stylesheet" href="game.css?v=9">
+  <link rel="stylesheet" href="game.css?v=11">
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6116067692659093" crossorigin="anonymous"></script>
 </head>
 <body>
@@ -68,7 +68,13 @@
     <div class="quick">
       <button class="btn btn-yellow btn-play" id="startBtn" type="button">▶ Play now</button>
       <button class="btn btn-line" id="watchBtn" type="button">👀 Watch 4 AI agents</button>
+      <button class="btn btn-green btn-online" id="onlineBtn" type="button" hidden>🌐 Play online with friends</button>
     </div>
+    <form class="join" id="joinForm" hidden>
+      <label for="joinCode">Have a room code?</label>
+      <input id="joinCode" maxlength="5" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="ABCDE">
+      <button class="btn btn-line btn-small" type="submit">Join</button>
+    </form>
     <p class="muse-status" id="museStatus"></p>
 
     <div class="level-row">
@@ -99,6 +105,32 @@
       <label class="proxy-row"><span>Worker URL</span><input type="url" id="proxyInput" placeholder="https://muse-proxy.your-name.workers.dev" autocomplete="off"></label>
       <button class="btn btn-line btn-small" id="proxySave" type="button">Save on this device</button>
     </details>
+  </section>
+
+  <section class="wrap lobby" id="lobby" hidden aria-labelledby="lobbyTitle">
+    <div class="lobby-head">
+      <button class="tbtn" id="lobbyExit" type="button">✕ <span>Leave room</span></button>
+      <span class="net" id="netStatus"></span>
+    </div>
+    <h2 id="lobbyTitle" class="setup-title">Online room</h2>
+    <div class="code-card">
+      <span class="code-label">Room code</span>
+      <b class="code" id="roomCode">·····</b>
+      <div class="share">
+        <a class="btn btn-green btn-small" id="shareWa" href="#" target="_blank" rel="noopener">Invite on WhatsApp</a>
+        <button class="btn btn-line btn-small" id="copyLink" type="button">Copy link</button>
+      </div>
+    </div>
+    <label class="name-row"><span>Your name</span><input id="myName" maxlength="16" autocomplete="nickname" placeholder="Type your name"></label>
+    <ol class="seats lobby-seats" id="lobbySeats"></ol>
+    <div class="level-row">
+      <span class="level-label" id="lobbyLevelLabel">AI level</span>
+      <div class="level" id="lobbyLevels" role="group" aria-labelledby="lobbyLevelLabel">
+        <button type="button" data-l="easy">Easy</button><button type="button" data-l="normal">Normal</button><button type="button" data-l="hard">Hard</button>
+      </div>
+    </div>
+    <p class="lobby-status" id="lobbyStatus" aria-live="polite"></p>
+    <button class="btn btn-yellow btn-play" id="lobbyStart" type="button">▶ Start game</button>
   </section>
 
   <section class="table" id="table" hidden aria-label="Game table">
@@ -133,6 +165,8 @@
     </div>
   </section>
 </main>
+
+<div class="toast" id="toast" hidden role="status"></div>
 
 <div class="cover" id="cover" hidden role="dialog" aria-modal="true" aria-labelledby="coverTitle">
   <div class="cover-card">
@@ -176,7 +210,9 @@
 <script src="brain.js?v=2"></script>
 <script src="lines.js?v=1"></script>
 <script src="muse.js?v=3"></script>
-<script src="game.js?v=7"></script>
+<script src="room-core.js?v=1"></script>
+<script src="online.js?v=3"></script>
+<script src="game.js?v=8"></script>
 <script src="../assets/ads.js?v=1" defer></script>
 <script defer src="/assets/dot.js?v=2"></script>
 </body>

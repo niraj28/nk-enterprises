@@ -1,7 +1,7 @@
 /* Sequence table UI: seats, board, hands, turn loop and table talk. */
 (function () {
   "use strict";
-  const E = window.SeqEngine, B = window.SeqBrain, M = window.SeqMuse, L = window.SeqLines;
+  const E = window.SeqEngine, B = window.SeqBrain, M = window.SeqMuse, L = window.SeqLines, O = window.SeqOnline;
   const $ = (id) => document.getElementById(id);
   const SUIT = { S: "♠", H: "♥", D: "♦", C: "♣" };
   const TEAM = ["Blue", "Green"];
@@ -79,6 +79,7 @@
   let state = null, players = [], token = 0, selected = null, revealed = -1, lastCell = -1, flashCell = -1, recent = [];
   let paused = false, chat = [], museWarned = false, lastAllAi = false, lastText = "", bubbleTimer = 0;
   let feedLog = [], lastBanter = -9, gameLevel = "normal";
+  let online = null; // { code, conn, you, view, status, gameNo, logShown, awaySeen, winShown }
   const humans = () => players.filter((p) => p.mode === "human").length;
   const over = () => state.winner != null || state.draw;
 
@@ -102,14 +103,19 @@
   function showTable() {
     document.body.classList.add("playing");
     $("setup").hidden = true; $("table").hidden = false; $("winSheet").hidden = true;
-    $("chatForm").hidden = humans() === 0;
-    $("pauseBtn").hidden = humans() > 0;
+    $("chatForm").hidden = online ? false : humans() === 0;
+    $("pauseBtn").hidden = !!online || humans() > 0;
+    $("speed").parentElement.hidden = !!online;
     setPause(false);
     window.scrollTo(0, 0);
   }
   const teamNames = (t) => players.filter((p, i) => E.teamOf(i) === t).map((p) => p.name).join(" & ");
 
   function exit() {
+    if (online) {
+      if (online.view && online.view.phase === "playing" && !confirm("Leave this online game? You can rejoin with the same link.")) return;
+      return leaveRoom();
+    }
     if (state && !over() && humans() > 0 && state.moveNo > 0 && !confirm("Leave this game?")) return;
     token++; state = null;
     try { localStorage.removeItem("seq.save"); } catch (e) { /* ignore */ }
@@ -229,6 +235,7 @@
     $("winTitle").textContent = state.draw ? "It's a draw" : youWon ? "You win! 🎉" : youLost ? `${TEAM[t]} wins this time` : `${TEAM[t]} team wins!`;
     $("winText").textContent = state.draw ? "The deck ran dry with no winner." : `${teamNames(t)} made 2 sequences in ${state.moveNo} moves.`;
     document.querySelector(".trophy").textContent = youLost ? "🤝" : "🏆";
+    $("againBtn").disabled = false; $("againBtn").textContent = "Play again";
     log("big", $("winTitle").textContent);
     try { localStorage.removeItem("seq.save"); } catch (e) { /* ignore */ }
     if (t != null) {
@@ -243,12 +250,15 @@
 
   // ---- Human input ----
   function viewerSeat() {
+    if (online) return online.you;
     const h = players.map((p, i) => (p.mode === "human" ? i : -1)).filter((i) => i >= 0);
     if (h.length === 1) return h[0];
     if (h.length === 0) return state.turn; // spectating: follow the agent whose turn it is
     return players[state.turn].mode === "human" && revealed === state.turn ? state.turn : -1;
   }
-  const myTurn = () => !over() && players[state.turn].mode === "human" && viewerSeat() === state.turn;
+  const myTurn = () => online
+    ? online.view && online.view.phase === "playing" && !over() && state.turn === online.you
+    : !over() && players[state.turn].mode === "human" && viewerSeat() === state.turn;
 
   function showCover(seat) {
     const p = players[seat];
@@ -286,6 +296,12 @@
     const seat = state.turn, cell = Number(c.dataset.i);
     const move = E.legalMoves(state, seat).find((m) => m.card === selected && m.cell === cell);
     if (!move) return;
+    if (online) {
+      online.conn.send({ t: "move", type: move.type, card: move.card, cell: move.cell });
+      selected = null;
+      render();
+      return;
+    }
     const pick = B.scoreMove(state, seat, move);
     const res = play(seat, pick, null);
     react(seat, pick, res);
@@ -297,6 +313,7 @@
     e.preventDefault();
     const v = $("chatInput").value.trim();
     if (!v) return;
+    if (online) { online.conn.send({ t: "chat", text: v }); $("chatInput").value = ""; return; }
     const s = viewerSeat();
     say(s >= 0 && players[s].mode === "human" ? s : players.findIndex((p) => p.mode === "human"), v);
     $("chatInput").value = "";
@@ -351,12 +368,14 @@
     let main;
     if (over()) main = "Game over";
     else if (mine) {
-      if (!selected) main = humans() > 1 ? `${p.name}, pick a card` : "Your turn: pick a card";
+      if (!selected) main = humans() > 1 && !online ? `${p.name}, pick a card` : "Your turn: pick a card";
       else if (E.TWO_EYED.has(selected)) main = "Wild jack: tap any open space";
       else if (E.ONE_EYED.has(selected)) main = legalSet.size ? "Tap an opponent chip to remove it" : "No chip to remove: pick another card";
       else main = `Tap a glowing space for ${label(selected)}`;
     } else if (p.mode === "human") main = `${p.name}'s turn`;
     else main = paused ? "Paused" : `${p.name} is thinking…`;
+    if (online && !over() && p.mode === "human" && p.away && !mine) main = `Waiting for ${p.name} to reconnect…`;
+    if (online && online.status === "offline") main = "Reconnecting…";
     $("turnText").textContent = main;
     $("lastText").textContent = lastText;
     $("banner").classList.toggle("mine", mine);
@@ -375,12 +394,18 @@
     }
 
     // player strip
-    const me = humans() === 1 ? viewerSeat() : -1;
+    const me = online ? online.you : humans() === 1 ? viewerSeat() : -1;
+    const iHost = online && online.view && online.view.host === online.you && online.you >= 0;
     $("players").innerHTML = players.map((pl, i) => {
       const now = i === seat && !over();
-      const status = now ? (pl.mode === "muse" ? '<small class="dots">thinking</small>' : "<small>to play</small>")
+      let status = now ? (pl.mode === "muse" ? '<small class="dots">thinking</small>' : "<small>to play</small>")
         : `<small>${me < 0 ? TEAM[E.teamOf(i)] : i === me ? "you" : E.teamOf(i) === E.teamOf(me) ? "partner" : "rival"}</small>`;
-      return `<li class="${now ? "now" : ""}">${avatar(pl, i)}<span class="meta"><b>${esc(pl.name)}</b>${status}</span></li>`;
+      if (pl.away) {
+        status = "<small>away</small>";
+        const since = online && online.awaySeen[i];
+        if (iHost && since && Date.now() - since >= 60000 && !over()) status += `<button type="button" class="take" data-take="${i}">AI plays</button>`;
+      }
+      return `<li class="${now ? "now" : ""}${pl.away ? " away" : ""}">${avatar(pl, i)}<span class="meta"><b>${esc(pl.name)}</b>${status}</span></li>`;
     }).join("");
   }
 
@@ -399,7 +424,10 @@
     chat.push({ who, text });
     if (chat.length > 30) chat.shift();
     log("say", `<b>${esc(who)}:</b> ${esc(text)}`);
-    // speech bubble under the speaker's seat
+    showBubble(seat, who, text);
+  }
+  // speech bubble under the speaker's seat
+  function showBubble(seat, who, text) {
     const bubble = $("bubble");
     bubble.innerHTML = `<b>${esc(who)}:</b> ${esc(text)}`;
     bubble.style.setProperty("--x", `${12.5 + seat * 25}%`);
@@ -445,6 +473,218 @@
   $("resumeBtn").addEventListener("click", resume);
   $("discardBtn").addEventListener("click", () => { try { localStorage.removeItem("seq.save"); } catch (e) { /* ignore */ } renderResume(); });
 
+  // ---- Online rooms ----
+  const toast = (msg) => {
+    const t = $("toast");
+    t.textContent = msg; t.hidden = false;
+    clearTimeout(toast.timer);
+    toast.timer = setTimeout(() => { t.hidden = true; }, 3500);
+  };
+  const myName = () => (store.get("seq.name", "") || "").slice(0, 16);
+  const roomLink = (code) => location.origin + location.pathname + "?room=" + code;
+
+  async function createRoom() {
+    try {
+      $("onlineBtn").disabled = true;
+      openRoom(await O.newCode(), true);
+    } catch (e) {
+      toast(e.message || "Couldn't create a room. Try again.");
+    } finally {
+      $("onlineBtn").disabled = false;
+    }
+  }
+
+  function openRoom(code, create) {
+    if (online) online.conn.close();
+    token++; state = null;
+    online = { code, you: -1, view: null, status: "connecting", gameNo: -1, logShown: 0, awaySeen: {}, winShown: -1 };
+    history.replaceState(null, "", "?room=" + code);
+    document.body.classList.add("in-lobby");
+    document.body.classList.remove("playing");
+    $("setup").hidden = true; $("table").hidden = true; $("lobby").hidden = false;
+    $("roomCode").textContent = code;
+    $("myName").value = myName();
+    $("lobbySeats").innerHTML = "";
+    $("lobbyStatus").textContent = "Connecting…";
+    const text = `Join my Sequence game! Room ${code}: ${roomLink(code)}`;
+    $("shareWa").href = "https://wa.me/?text=" + encodeURIComponent(text);
+    online.conn = O.connect(code, { create, onMessage, onStatus });
+  }
+
+  function leaveRoom() {
+    if (online) online.conn.close();
+    online = null; state = null; token++;
+    history.replaceState(null, "", location.pathname);
+    document.body.classList.remove("in-lobby", "playing");
+    $("lobby").hidden = true; $("table").hidden = true; $("winSheet").hidden = true; $("setup").hidden = false;
+    renderSeats(); renderResume();
+  }
+
+  function onStatus(status) {
+    if (!online) return;
+    online.status = status;
+    const el = $("netStatus");
+    el.className = "net " + status;
+    el.textContent = { connecting: "Connecting…", online: "● Connected", offline: "Reconnecting…" }[status];
+    if (state) render();
+  }
+
+  function onMessage(m) {
+    if (!online) return;
+    if (m.t === "you") {
+      online.you = m.seat;
+      O.setToken(online.code, m.token);
+      if (online.view) applyView(online.view);
+    } else if (m.t === "error") {
+      if (!online.view && /not found/i.test(m.msg)) {
+        $("lobbyStatus").textContent = m.msg;
+        $("lobbySeats").innerHTML = "";
+        $("lobbyStart").hidden = true;
+        return;
+      }
+      toast(m.msg);
+    } else if (m.t === "room") {
+      online.view = m;
+      applyView(m);
+    }
+  }
+
+  function applyView(v) {
+    v.seats.forEach((s, i) => {
+      if (s.kind === "human" && !s.connected) { if (!online.awaySeen[i]) online.awaySeen[i] = Date.now(); }
+      else delete online.awaySeen[i];
+    });
+    if (v.phase === "lobby" || !v.game) {
+      document.body.classList.remove("playing");
+      document.body.classList.add("in-lobby");
+      $("table").hidden = true; $("lobby").hidden = false; $("winSheet").hidden = true;
+      return renderLobby(v);
+    }
+    // game view: rebuild a client-side state from what the server lets this seat see
+    const g = v.game, hands = [[], [], [], []];
+    if (v.you >= 0) hands[v.you] = g.hand;
+    const prevTurn = state ? state.turn : -1, prevMove = state ? state.moveNo : -1;
+    state = { chips: g.chips, seqCells: g.seqCells, sequences: g.sequences, turn: g.turn, moveNo: g.moveNo, winner: g.winner, draw: g.draw, needed: g.needed, hands, deck: { length: g.deckCount }, seats: 4 };
+    players = v.seats.map((s, i) => ({ name: s.name || "Empty", mode: s.kind === "ai" ? "muse" : "human", persona: M.PERSONAS[i], away: s.kind === "human" && !s.connected }));
+    if (g.moveNo !== prevMove && v.lastCell !== lastCell) flashCell = v.lastCell;
+    lastCell = v.lastCell; recent = v.recent || [];
+    if (selected && (prevTurn !== g.turn || !g.hand.includes(selected))) selected = null;
+    if ($("table").hidden) { document.body.classList.remove("in-lobby"); $("lobby").hidden = true; showTable(); }
+    syncFeed(v);
+    render();
+    if (v.phase === "over" && online.winShown !== v.gameNo) { online.winShown = v.gameNo; showOnlineWin(v); }
+    if (v.phase === "playing") $("winSheet").hidden = true;
+  }
+
+  function syncFeed(v) {
+    const first = online.gameNo !== v.gameNo;
+    if (first) { online.gameNo = v.gameNo; online.logShown = 0; $("feed").innerHTML = ""; }
+    let latestMove = null;
+    for (const e of v.log) {
+      if (e.id <= online.logShown) continue;
+      online.logShown = e.id;
+      if (e.k === "move") {
+        const who = e.seat === online.you ? "You" : players[e.seat].name;
+        const what = e.type === "remove"
+          ? `${who} removed a ${TEAM[e.removedTeam]} chip at ${E.cellName(e.cell)} (${label(e.card)})`
+          : `${who} played ${label(e.card)} on ${E.cellName(e.cell)}`;
+        log("move", `<b>${esc(what)}</b>${e.note ? " · " + esc(e.note) : ""}`, true);
+        latestMove = what + (e.note ? " · " + e.note : "");
+      } else if (e.k === "say") {
+        log("say", `<b>${esc(e.who)}:</b> ${esc(e.text)}`, true);
+        if (!first) showBubble(e.seat, e.who, e.text);
+      } else log(e.k, e.text, true);
+    }
+    if (latestMove) lastText = latestMove;
+    if (v.lastText) lastText = v.lastText;
+  }
+
+  function showOnlineWin(v) {
+    const t = state.winner, mine = v.you >= 0 ? E.teamOf(v.you) : -1;
+    const iHost = v.host === v.you && v.you >= 0;
+    $("winTitle").textContent = state.draw ? "It's a draw" : mine === t ? "You win! 🎉" : mine >= 0 ? `${TEAM[t]} wins this time` : `${TEAM[t]} team wins!`;
+    $("winText").textContent = state.draw ? "The deck ran dry with no winner." : `${teamNames(t)} made 2 sequences in ${state.moveNo} moves.`;
+    document.querySelector(".trophy").textContent = mine >= 0 && mine !== t ? "🤝" : "🏆";
+    $("againBtn").disabled = !iHost;
+    $("againBtn").textContent = iHost ? "Play again" : "Waiting for host…";
+    $("winSheet").hidden = false;
+  }
+
+  function renderLobby(v) {
+    const you = online.you, iHost = v.host === you && you >= 0;
+    const filled = v.seats.filter((s) => s.kind !== "empty").length;
+    const ol = $("lobbySeats");
+    ol.innerHTML = v.seats.map((s, i) => {
+      const team = TEAM[E.teamOf(i)];
+      let name, sub, actions = "";
+      if (s.kind === "empty") {
+        name = "Empty seat"; sub = `${team} team`;
+        if (you < 0) actions += `<button type="button" class="btn btn-blue btn-small" data-sit="${i}">Sit here</button>`;
+        if (iHost) actions += `<button type="button" class="btn btn-line btn-small" data-ai="${i}">+ AI</button>`;
+      } else if (s.kind === "ai") {
+        name = s.name; sub = `${team} team · AI player`;
+        if (iHost) actions += `<button type="button" class="btn btn-line btn-small" data-noai="${i}">Remove</button>`;
+      } else {
+        name = esc(s.name) + (i === you ? " (you)" : "") + (i === v.host ? '<span class="tag-host">host</span>' : "");
+        sub = `${team} team · ${s.connected ? "online" : "away"}`;
+        if (i === you) actions += `<button type="button" class="btn btn-line btn-small" data-stand="1">Leave seat</button>`;
+      }
+      const av = s.kind === "empty" ? `<span class="avatar" aria-hidden="true">${i + 1}</span>` : avatar({ name: s.name, mode: s.kind === "ai" ? "muse" : "human" }, i);
+      return `<li class="seat${s.kind === "empty" ? " empty" : ""}">${av}<div class="who"><b>${s.kind === "human" ? name : esc(name)}</b><span class="persona">${esc(sub)}</span></div><div class="seat-actions">${actions}</div></li>`;
+    }).join("");
+    document.querySelectorAll("#lobbyLevels button").forEach((b) => {
+      b.setAttribute("aria-pressed", String(b.dataset.l === v.level));
+      b.disabled = !iHost;
+    });
+    const start = $("lobbyStart");
+    start.hidden = !iHost;
+    start.disabled = filled < 4;
+    $("lobbyStatus").textContent =
+      you < 0 ? "Type your name and pick a seat. Blue (seats 1, 3) plays Green (seats 2, 4)."
+      : iHost ? (filled < 4 ? "Invite friends with the link, or tap + AI to fill empty seats. Then start." : "Everyone's seated. Start when ready!")
+      : "Waiting for the host to start the game…";
+  }
+
+  $("lobbySeats").addEventListener("click", (e) => {
+    const b = e.target.closest("button");
+    if (!b || !online) return;
+    if (b.dataset.sit) {
+      const name = $("myName").value.trim();
+      if (!name) { $("myName").focus(); return toast("Type your name first."); }
+      store.set("seq.name", name);
+      online.conn.send({ t: "sit", seat: Number(b.dataset.sit), name });
+    } else if (b.dataset.ai) online.conn.send({ t: "ai", seat: Number(b.dataset.ai), on: true });
+    else if (b.dataset.noai) online.conn.send({ t: "ai", seat: Number(b.dataset.noai), on: false });
+    else if (b.dataset.stand) online.conn.send({ t: "stand" });
+  });
+  $("myName").addEventListener("change", () => {
+    const name = $("myName").value.trim();
+    if (!name) return;
+    store.set("seq.name", name);
+    if (online && online.you >= 0) online.conn.send({ t: "name", name });
+  });
+  document.querySelectorAll("#lobbyLevels button").forEach((b) => b.addEventListener("click", () => online && online.conn.send({ t: "level", level: b.dataset.l })));
+  $("lobbyStart").addEventListener("click", () => online && online.conn.send({ t: "start" }));
+  $("lobbyExit").addEventListener("click", leaveRoom);
+  $("copyLink").addEventListener("click", async () => {
+    try { await navigator.clipboard.writeText(roomLink(online.code)); toast("Link copied. Paste it to your friends."); }
+    catch (e) { toast(roomLink(online.code)); }
+  });
+  $("players").addEventListener("click", (e) => {
+    const b = e.target.closest("[data-take]");
+    if (b && online) online.conn.send({ t: "ai", seat: Number(b.dataset.take), on: true });
+  });
+  // the "AI plays" button appears a minute after someone drops, so re-check now and then
+  setInterval(() => { if (online && state && Object.keys(online.awaySeen).length) render(); }, 5000);
+
+  $("onlineBtn").addEventListener("click", createRoom);
+  $("joinForm").addEventListener("submit", (e) => {
+    e.preventDefault();
+    const code = $("joinCode").value.trim().toUpperCase();
+    if (!O.validCode(code)) return toast("Room codes are 5 letters, like QWERT.");
+    openRoom(code, false);
+  });
+
   function setPause(v) {
     paused = v;
     $("pauseBtn").innerHTML = paused ? "▶ <span>Resume</span>" : "❚❚ <span>Pause</span>";
@@ -455,7 +695,10 @@
   $("startBtn").addEventListener("click", () => start(false));
   $("watchBtn").addEventListener("click", () => start(true));
   $("newBtn").addEventListener("click", exit);
-  $("againBtn").addEventListener("click", () => start(lastAllAi));
+  $("againBtn").addEventListener("click", () => {
+    if (online) { online.conn.send({ t: "start" }); $("winSheet").hidden = true; return; }
+    start(lastAllAi);
+  });
   $("closeWin").addEventListener("click", () => { $("winSheet").hidden = true; });
   $("pauseBtn").addEventListener("click", () => setPause(!paused));
   document.addEventListener("keydown", (e) => {
@@ -467,4 +710,7 @@
   renderLevel();
   renderMuseStatus();
   renderResume();
+  if (O && O.available()) { $("onlineBtn").hidden = false; $("joinForm").hidden = false; }
+  const roomParam = (new URLSearchParams(location.search).get("room") || "").toUpperCase();
+  if (O && O.available() && O.validCode(roomParam)) openRoom(roomParam, false);
 })();
