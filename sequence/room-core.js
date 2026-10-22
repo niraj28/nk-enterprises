@@ -24,14 +24,14 @@
   class RoomCore {
     constructor(data) {
       Object.assign(this, {
-        created: false, code: "", phase: "lobby", level: "normal", creator: -1,
+        created: false, code: "", phase: "lobby", level: "normal", mode: "2v2", creator: -1,
         seats: [0, 1, 2, 3].map(() => ({ kind: "empty", name: "", token: "", connected: false, awaySince: 0, takenOver: false })),
         state: null, log: [], logId: 0, gameNo: 0, lastCell: -1, recent: [], lastText: "", lastBanter: -9, lastActive: 0
       }, data || {});
     }
     toJSON() {
-      const { created, code, phase, level, creator, seats, state, log, logId, gameNo, lastCell, recent, lastText, lastBanter, lastActive } = this;
-      return { created, code, phase, level, creator, seats, state, log, logId, gameNo, lastCell, recent, lastText, lastBanter, lastActive };
+      const { created, code, phase, level, mode, creator, seats, state, log, logId, gameNo, lastCell, recent, lastText, lastBanter, lastActive } = this;
+      return { created, code, phase, level, mode, creator, seats, state, log, logId, gameNo, lastCell, recent, lastText, lastBanter, lastActive };
     }
 
     // ---- who is who ----
@@ -83,7 +83,7 @@
           const i = Number(msg.seat);
           if (me >= 0) return fail("You already have a seat.");
           if (this.phase !== "lobby") return fail("The game has already started.");
-          if (!(i >= 0 && i < 4) || this.seats[i].kind !== "empty") return fail("That seat is taken.");
+          if (!(i >= 0 && i < this.seats.length) || this.seats[i].kind !== "empty") return fail("That seat is taken.");
           const s = this.seats[i];
           Object.assign(s, { kind: "human", name: clean(msg.name, 16) || "Player " + (i + 1), token: makeToken(rand), connected: true, awaySince: 0, takenOver: false });
           if (this.creator < 0 || this.seats[this.creator].kind !== "human") this.creator = i;
@@ -109,7 +109,7 @@
         case "ai": {
           const i = Number(msg.seat);
           if (!isHost) return fail("Only the host can do that.");
-          if (!(i >= 0 && i < 4)) return fail("No such seat.");
+          if (!(i >= 0 && i < this.seats.length)) return fail("No such seat.");
           const s = this.seats[i];
           if (this.phase === "lobby") {
             if (msg.on && s.kind === "empty") Object.assign(s, { kind: "ai", name: AI_NAMES[i], token: "", takenOver: false });
@@ -125,6 +125,20 @@
           out.changed = true;
           return out;
         }
+        case "mode": {
+          if (!isHost || this.phase === "playing") return fail("Only the host can change the mode before the game.");
+          if (msg.mode !== "1v1" && msg.mode !== "2v2") return fail("Unknown mode.");
+          if (msg.mode === this.mode) return out;
+          if (msg.mode === "1v1") {
+            if (this.seats.slice(2).some((s) => s.kind === "human")) return fail("Seats 3 and 4 have players. Ask them to leave their seats first.");
+            this.seats = this.seats.slice(0, 2);
+          } else {
+            for (let i = this.seats.length; i < 4; i++) this.seats.push({ kind: "empty", name: "", token: "", connected: false, awaySince: 0, takenOver: false });
+          }
+          this.mode = msg.mode;
+          out.changed = true;
+          return out;
+        }
         case "level": {
           if (!isHost || this.phase === "playing") return fail("Only the host can change the level before the game.");
           if (!LEVELS.includes(msg.level)) return fail("Unknown level.");
@@ -136,7 +150,7 @@
           if (!isHost) return fail("Only the host can start.");
           if (this.phase === "playing" && !this.over()) return fail("Game in progress.");
           if (this.seats.some((s) => s.kind === "empty")) return fail("Fill every seat with a friend or an AI first.");
-          this.state = E.newGame({ seats: 4, seed: Math.floor(rand() * 2 ** 31) });
+          this.state = E.newGame({ seats: this.seats.length, seed: Math.floor(rand() * 2 ** 31) });
           this.phase = "playing"; this.gameNo++; this.log = []; this.lastCell = -1; this.recent = []; this.lastText = ""; this.lastBanter = -9;
           this.addLog({ k: "sys", text: `${this.teamNames(0)} (Blue) vs ${this.teamNames(1)} (Green). AI level: ${this.level}. First to 2 sequences wins.` });
           const ais = this.seats.map((s, i) => i).filter((i) => this.seats[i].kind === "ai");
@@ -277,7 +291,7 @@
       const forced = ["start", "sequence", "theirSeq", "win", "lose"].includes(event);
       const moveNo = this.state ? this.state.moveNo : 0;
       if (!forced && moveNo - this.lastBanter < 3) return;
-      const rivals = [0, 1, 2, 3].filter((i) => E.teamOf(i) !== E.teamOf(seat));
+      const rivals = this.seats.map((x, i) => i).filter((i) => E.teamOf(i) !== E.teamOf(seat));
       const mate = this.seats.find((x, i) => i !== seat && E.teamOf(i) === E.teamOf(seat));
       const opp = target != null && E.teamOf(target) !== E.teamOf(seat) ? target : rivals[Math.floor(rand() * rivals.length)];
       const text = L.line(AI_NAMES[seat], event, { opp: this.seats[opp].name, mate: mate ? mate.name : "" }, rand);
@@ -289,7 +303,7 @@
       if (this.over()) return;
       const ev = res.made ? "theirSeq" : res.type === "remove" ? "hit" : /blocks opponents' 4/.test(pick.notes.join(" ")) ? "hit" : "";
       if (!ev) return;
-      const rivals = [0, 1, 2, 3].filter((i) => E.teamOf(i) !== E.teamOf(mover) && this.seats[i].kind === "ai" && !this.seats[i].takenOver);
+      const rivals = this.seats.map((x, i) => i).filter((i) => E.teamOf(i) !== E.teamOf(mover) && this.seats[i].kind === "ai" && !this.seats[i].takenOver);
       if (rivals.length) this.banter(rivals[Math.floor(rand() * rivals.length)], ev, mover, rand);
     }
 
@@ -297,7 +311,7 @@
     view(seat) {
       const st = this.state;
       return {
-        t: "room", code: this.code, phase: this.phase, level: this.level, host: this.hostSeat(), you: seat, gameNo: this.gameNo,
+        t: "room", code: this.code, phase: this.phase, level: this.level, mode: this.mode, host: this.hostSeat(), you: seat, gameNo: this.gameNo,
         seats: this.seats.map((s) => ({ kind: s.kind, name: s.name, connected: s.kind !== "human" || s.connected, awaySince: s.awaySince, takenOver: !!s.takenOver })),
         game: st ? {
           chips: st.chips, seqCells: st.seqCells, sequences: st.sequences, turn: st.turn, moveNo: st.moveNo,

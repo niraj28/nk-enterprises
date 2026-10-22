@@ -11,6 +11,7 @@
   function serverUrl() {
     let u = "";
     try { u = localStorage.getItem("seq.roomServer") || ""; } catch (e) { /* private mode */ }
+    if (!u && isDev()) return ""; // localhost: use the in-browser test hub (the live server only accepts the real site)
     return (u || ROOM_SERVER || (root.SeqMuse ? root.SeqMuse.proxyUrl() : "") || "").replace(/\/$/, "");
   }
   const available = () => !!serverUrl() || isDev();

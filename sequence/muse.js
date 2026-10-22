@@ -47,8 +47,10 @@
     const team = E.teamOf(seat), teamName = ["Blue", "Green"][team];
     const mate = players.find((p, i) => i !== seat && E.teamOf(i) === team);
     const system =
-      `You are ${persona.name}, an AI player in a 4-player Sequence board game (two teams of two). ` +
-      `Your personality: ${persona.voice}. You are on team ${teamName} with ${mate ? mate.name : "a partner"}. ` +
+      (state.seats === 2
+        ? `You are ${persona.name}, an AI player in a 1-vs-1 Sequence board game. Your personality: ${persona.voice}. You play ${teamName}. `
+        : `You are ${persona.name}, an AI player in a 4-player Sequence board game (two teams of two). ` +
+          `Your personality: ${persona.voice}. You are on team ${teamName} with ${mate ? mate.name : "a partner"}. `) +
       `Win by making ${state.needed} lines of 5 chips. Corners (*) count for everyone. ` +
       `Pick ONE move from the numbered options. Prefer completing or blocking 4-in-a-row, save wild jacks for when they matter. ` +
       `${LEVEL_HINT[level] || LEVEL_HINT.normal} ` +

@@ -85,13 +85,14 @@ body.playing { background: #f4f1ea; }
 .tbtn { font: inherit; font-size: 15px; font-weight: 700; color: var(--blue-ink); background: #fff; border: 1.5px solid var(--blue-line); border-radius: 999px; padding: 6px 14px; cursor: pointer; white-space: nowrap; }
 .tbtn:hover { border-color: var(--blue); }
 .scores { display: flex; gap: 6px; }
+.tsound { padding-inline: 10px; }
 .score { display: inline-flex; align-items: center; gap: 6px; font-weight: 700; font-size: 15px; background: #fff; border-radius: 999px; padding: 5px 12px; border: 1.5px solid var(--blue-line); white-space: nowrap; }
 .score i { width: 12px; height: 12px; border-radius: 50%; background: var(--blue); }
 .score.s1 i { background: var(--green); }
 .score b { font-size: 18px; }
 .score em { font-style: normal; }
 
-.strip { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+.strip { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(var(--n, 4), minmax(0, 1fr)); gap: 6px; }
 .strip li { display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 14px; background: #fff; border: 2px solid transparent; min-width: 0; transition: border-color .2s, transform .2s; }
 .strip li.now { border-color: var(--yellow); box-shadow: 0 6px 16px -10px rgba(0,0,0,.4); transform: translateY(-2px); }
 .strip .meta { display: grid; min-width: 0; line-height: 1.2; }

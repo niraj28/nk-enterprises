@@ -117,6 +117,35 @@ if (globalThis.SeqMuse) {
   assert(mv.src === "llm" && sayLine.text === "Watch this, friends." && sayLine.seat === 1, "model's move and line logged");
 }
 
+// 1 vs 1 rooms: the host switches mode; it's refused while a player sits in seat 3 or 4
+{
+  const r3 = new R.RoomCore(), host = { seat: -1 }, guest = { seat: -1 }, far = { seat: -1 };
+  r3.handle(host, { t: "hello", create: true, code: "ONEV1" }, now, rand);
+  r3.handle(guest, { t: "hello" }, now, rand); r3.handle(far, { t: "hello" }, now, rand);
+  r3.handle(host, { t: "sit", seat: 0, name: "Host" }, now, rand);
+  r3.handle(far, { t: "sit", seat: 3, name: "Far" }, now, rand);
+  assert(r3.handle(host, { t: "mode", mode: "1v1" }, now, rand).reply.t === "error", "1v1 refused with a player in seat 4");
+  r3.handle(far, { t: "stand" }, now, rand);
+  assert(r3.handle(guest, { t: "mode", mode: "1v1" }, now, rand).reply.t === "error", "only host changes mode");
+  r3.handle(host, { t: "mode", mode: "1v1" }, now, rand);
+  assert(r3.seats.length === 2 && r3.view(0).mode === "1v1", "room is 1v1");
+  assert(r3.handle(far, { t: "sit", seat: 3, name: "Far" }, now, rand).reply.t === "error", "no seat 4 in 1v1");
+  r3.handle(guest, { t: "sit", seat: 1, name: "Guest" }, now, rand);
+  r3.handle(host, { t: "start" }, now, rand);
+  assert(r3.state.seats === 2 && r3.view(0).game.hand.length === 7, "1v1 game with 7 cards");
+  let n = 0;
+  while (r3.phase === "playing" && n++ < 400) {
+    const t = r3.state.turn, mv = E.legalMoves(r3.state, t)[0];
+    const res = r3.handle(t === 0 ? host : guest, { t: "move", ...mv }, now, rand);
+    assert(!res.reply, "1v1 move accepted");
+    const v = r3.view(t === 0 ? 1 : 0);
+    assert(!JSON.stringify(v).includes(JSON.stringify(r3.state.hands[t])), "1v1 hands stay private");
+  }
+  assert(r3.phase === "over", "1v1 room game finished");
+  r3.handle(host, { t: "mode", mode: "2v2" }, now, rand);
+  assert(r3.seats.length === 4 && r3.seats[2].kind === "empty", "back to 2v2 adds empty seats");
+}
+
 // chat and play again
 send(c, { t: "chat", text: "gg <script>" });
 assert(room.log[room.log.length - 1].text === "gg script", "chat sanitised");
@@ -124,4 +153,4 @@ assert(send(c, { t: "start" }).reply.t === "error", "only host restarts");
 send(a, { t: "start" });
 assert(room.phase === "playing" && room.gameNo === 2, "play again");
 
-out(`PASS: rooms (create, seats, host, AI fill-in, takeover and return, ${steps} turns, private hands, save/restore, chat).`);
+out(`PASS: rooms (1v1 and 2v2, create, seats, host, AI fill-in, takeover and return, ${steps} turns, private hands, save/restore, chat).`);

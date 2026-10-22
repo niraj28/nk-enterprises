@@ -105,6 +105,23 @@ if (globalThis.SeqLines) {
   assert(t.includes("Asha") && !/[{}]/.test(t), "placeholders filled: " + t);
 }
 
+// 1 vs 1: 7 cards each, two seats alternate, games finish
+let oneWins = 0;
+for (let g = 0; g < 30; g++) {
+  const st = E.newGame({ seats: 2, seed: 7000 + g });
+  assert(st.hands.length === 2 && st.hands.every((h) => h.length === 7), "1v1 deals 7 cards each");
+  while (st.winner == null && !st.draw) {
+    const before = st.turn;
+    E.tradeDeadCard(st, st.turn);
+    const ranked = B.analyse(st, st.turn, "normal");
+    if (!ranked.length) { E.pass(st, st.turn); continue; }
+    E.applyMove(st, st.turn, B.pick(ranked, 0.5, Math.random, "normal").move);
+    assert(st.winner != null || st.turn === 1 - before, "1v1 turns alternate");
+  }
+  if (st.winner != null) oneWins++;
+}
+assert(oneWins >= 28, "1v1 games finish: " + oneWins);
+
 // fair play: the AI's choice must not depend on hidden information (other hands, deck order)
 let fairChecks = 0;
 for (let g = 0; g < 50; g++) {

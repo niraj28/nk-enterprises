@@ -2,6 +2,7 @@
 (function () {
   "use strict";
   const E = window.SeqEngine, B = window.SeqBrain, M = window.SeqMuse, L = window.SeqLines, O = window.SeqOnline;
+  const S = window.SeqSound || { play() {}, enabled: () => false, toggle: () => false };
   const $ = (id) => document.getElementById(id);
   const SUIT = { S: "♠", H: "♥", D: "♦", C: "♣" };
   const TEAM = ["Blue", "Green"];
@@ -19,9 +20,20 @@
     seats = M.PERSONAS.map((p, i) => ({ name: i === 0 ? "You" : p.name, mode: i === 0 ? "human" : "muse" }));
   }
 
+  let mode = store.get("seq.mode", "2v2") === "1v1" ? "1v1" : "2v2";
+  const seatCount = () => (mode === "1v1" ? 2 : 4);
+  function renderMode() {
+    document.querySelectorAll("#modes button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.v === mode)));
+    $("modeHint").textContent = mode === "1v1" ? "You against one opponent. 7 cards each, first to 2 sequences." : "Two teams of two. 6 cards each, first to 2 sequences.";
+    $("watchBtn").textContent = mode === "1v1" ? "👀 Watch 2 AI agents" : "👀 Watch 4 AI agents";
+  }
+  document.querySelectorAll("#modes button").forEach((b) => b.addEventListener("click", () => {
+    mode = b.dataset.v; store.set("seq.mode", mode); renderMode(); renderSeats();
+  }));
+
   function renderSeats() {
     $("seats").innerHTML = "";
-    seats.forEach((s, i) => {
+    seats.slice(0, seatCount()).forEach((s, i) => {
       const p = M.PERSONAS[i], el = document.createElement("li");
       el.className = "seat";
       el.innerHTML =
@@ -47,11 +59,11 @@
           renderSeats();
         });
       });
-      el.querySelector(".persona").textContent = `${TEAM[E.teamOf(i)]} team · ` +
+      el.querySelector(".persona").textContent = `${TEAM[E.teamOf(i)]}${mode === "1v1" ? "" : " team"} · ` +
         (s.mode === "muse" ? p.voice.replace(/^an? /, "") : "plays on this device");
       $("seats").appendChild(el);
     });
-    const h = seats.filter((s) => s.mode === "human").length;
+    const h = seats.slice(0, seatCount()).filter((s) => s.mode === "human").length;
     $("startBtn").textContent = h === 0 ? "▶ Start (AI only)" : h === 1 ? "▶ Play now" : `▶ Play now (${h} players, 1 phone)`;
   }
 
@@ -85,16 +97,16 @@
 
   function start(allAi) {
     lastAllAi = allAi;
-    const cfg = allAi ? M.PERSONAS.map((p) => ({ name: p.name, mode: "muse" })) : seats;
+    const cfg = (allAi ? M.PERSONAS.map((p) => ({ name: p.name, mode: "muse" })) : seats).slice(0, seatCount());
     if (!allAi) store.set("seq.seats", seats);
     players = cfg.map((s, i) => ({ name: s.name || M.PERSONAS[i].name, mode: s.mode, persona: M.PERSONAS[i] }));
-    state = E.newGame({ seats: 4 });
+    state = E.newGame({ seats: players.length });
     gameLevel = level;
     token++; selected = null; revealed = -1; lastCell = -1; recent = []; paused = false; chat = []; museWarned = false; lastText = "";
     feedLog = []; lastBanter = -9;
     $("feed").innerHTML = ""; $("bubble").hidden = true;
     showTable();
-    log("sys", `${teamNames(0)} (Blue) vs ${teamNames(1)} (Green). AI level: ${gameLevel}. First to 2 sequences wins.`);
+    log("sys", `${teamNames(0)} (Blue) vs ${teamNames(1)} (Green)${players.length === 2 ? ", 1 vs 1" : ""}. AI level: ${gameLevel}. First to 2 sequences wins.`);
     const ais = players.map((p, i) => i).filter((i) => players[i].mode === "muse");
     if (ais.length) { const my = token, sp = ais[Math.floor(Math.random() * ais.length)]; setTimeout(() => my === token && banter(sp, "start"), 500); }
     step();
@@ -174,6 +186,7 @@
   function play(seat, pick, source) {
     const p = players[seat], m = pick.move;
     const res = E.applyMove(state, seat, m);
+    S.play(res.made ? "sequence" : m.type === "remove" ? "remove" : "place");
     lastCell = m.cell; flashCell = m.type === "place" ? m.cell : -1;
     recent = [m.cell, ...recent.filter((c) => c !== m.cell)].slice(0, 3);
     const d = describe(p, m, res, pick, p.mode === "human" && humans() === 1);
@@ -236,6 +249,7 @@
     $("winText").textContent = state.draw ? "The deck ran dry with no winner." : `${teamNames(t)} made 2 sequences in ${state.moveNo} moves.`;
     document.querySelector(".trophy").textContent = youLost ? "🤝" : "🏆";
     $("againBtn").disabled = false; $("againBtn").textContent = "Play again";
+    S.play(youLost ? "lose" : "win");
     log("big", $("winTitle").textContent);
     try { localStorage.removeItem("seq.save"); } catch (e) { /* ignore */ }
     if (t != null) {
@@ -268,6 +282,7 @@
     $("coverText").textContent = `Pass the phone to ${p.name} (${TEAM[E.teamOf(seat)]} team). Everyone else, no peeking!`;
     $("cover").hidden = false;
     $("coverBtn").focus();
+    S.play("turn");
   }
   $("coverBtn").addEventListener("click", () => { revealed = state.turn; $("cover").hidden = true; render(); });
 
@@ -275,6 +290,7 @@
     const b = e.target.closest(".card");
     if (!b || !myTurn()) return;
     selected = selected === b.dataset.card ? null : b.dataset.card;
+    if (selected) S.play("select");
     render();
     // on phones, make sure the glowing spaces are in view
     if (selected && $("board").getBoundingClientRect().top < 0) $("banner").scrollIntoView({ behavior: "smooth", block: "start" });
@@ -396,6 +412,7 @@
     // player strip
     const me = online ? online.you : humans() === 1 ? viewerSeat() : -1;
     const iHost = online && online.view && online.view.host === online.you && online.you >= 0;
+    $("players").style.setProperty("--n", players.length);
     $("players").innerHTML = players.map((pl, i) => {
       const now = i === seat && !over();
       let status = now ? (pl.mode === "muse" ? '<small class="dots">thinking</small>' : "<small>to play</small>")
@@ -425,12 +442,13 @@
     if (chat.length > 30) chat.shift();
     log("say", `<b>${esc(who)}:</b> ${esc(text)}`);
     showBubble(seat, who, text);
+    S.play("chat");
   }
   // speech bubble under the speaker's seat
   function showBubble(seat, who, text) {
     const bubble = $("bubble");
     bubble.innerHTML = `<b>${esc(who)}:</b> ${esc(text)}`;
-    bubble.style.setProperty("--x", `${12.5 + seat * 25}%`);
+    bubble.style.setProperty("--x", `${(seat + 0.5) * 100 / Math.max(players.length, 1)}%`);
     bubble.hidden = false;
     bubble.style.animation = "none"; void bubble.offsetWidth; bubble.style.animation = "";
     clearTimeout(bubbleTimer);
@@ -448,7 +466,7 @@
   }
   function loadSave() {
     const s = store.get("seq.save", null);
-    return s && s.v === 1 && s.state && Array.isArray(s.players) && s.players.length === 4 && s.state.winner == null && !s.state.draw ? s : null;
+    return s && s.v === 1 && s.state && Array.isArray(s.players) && (s.players.length === 2 || s.players.length === 4) && s.state.seats === s.players.length && s.state.winner == null && !s.state.draw ? s : null;
   }
   function renderResume() {
     const s = loadSave();
@@ -561,7 +579,7 @@
       return renderLobby(v);
     }
     // game view: rebuild a client-side state from what the server lets this seat see
-    const g = v.game, hands = [[], [], [], []];
+    const g = v.game, hands = v.seats.map(() => []);
     if (v.you >= 0) hands[v.you] = g.hand;
     const prevTurn = state ? state.turn : -1, prevMove = state ? state.moveNo : -1;
     state = { chips: g.chips, seqCells: g.seqCells, sequences: g.sequences, turn: g.turn, moveNo: g.moveNo, winner: g.winner, draw: g.draw, needed: g.needed, hands, deck: { length: g.deckCount }, seats: 4 };
@@ -569,6 +587,7 @@
     if (g.moveNo !== prevMove && v.lastCell !== lastCell) flashCell = v.lastCell;
     lastCell = v.lastCell; recent = v.recent || [];
     if (selected && (prevTurn !== g.turn || !g.hand.includes(selected))) selected = null;
+    if (prevTurn !== -1 && prevTurn !== g.turn && g.turn === v.you && v.phase === "playing" && !(g.winner != null || g.draw)) setTimeout(() => S.play("turn"), 350);
     if ($("table").hidden) { document.body.classList.remove("in-lobby"); $("lobby").hidden = true; showTable(); }
     syncFeed(v);
     render();
@@ -579,7 +598,9 @@
   function syncFeed(v) {
     const first = online.gameNo !== v.gameNo;
     if (first) { online.gameNo = v.gameNo; online.logShown = 0; $("feed").innerHTML = ""; }
-    let latestMove = null;
+    let latestMove = null, sfx = "";
+    const rank = { place: 1, remove: 2, sequence: 3 };
+    const want = (n) => { if (!first && (!sfx || rank[n] > rank[sfx])) sfx = n; };
     for (const e of v.log) {
       if (e.id <= online.logShown) continue;
       online.logShown = e.id;
@@ -591,11 +612,16 @@
         const tag = e.src ? `<span class="src">${e.src === "llm" ? "Gemini" : "brain"}</span>` : "";
         log("move", `<b>${esc(what)}</b>${e.note ? " · " + esc(e.note) : ""}${tag}`, true);
         latestMove = what + (e.note ? " · " + e.note : "");
+        want(e.type === "remove" ? "remove" : "place");
       } else if (e.k === "say") {
         log("say", `<b>${esc(e.who)}:</b> ${esc(e.text)}`, true);
-        if (!first) showBubble(e.seat, e.who, e.text);
-      } else log(e.k, e.text, true);
+        if (!first) { showBubble(e.seat, e.who, e.text); if (!sfx) S.play("chat"); }
+      } else {
+        log(e.k, e.text, true);
+        if (e.k === "big" && /made a sequence/.test(e.text)) want("sequence");
+      }
     }
+    if (sfx) S.play(sfx);
     if (latestMove) lastText = latestMove;
     if (v.lastText) lastText = v.lastText;
   }
@@ -607,42 +633,47 @@
     $("winText").textContent = state.draw ? "The deck ran dry with no winner." : `${teamNames(t)} made 2 sequences in ${state.moveNo} moves.`;
     document.querySelector(".trophy").textContent = mine >= 0 && mine !== t ? "🤝" : "🏆";
     $("againBtn").disabled = !iHost;
+    S.play(mine >= 0 && mine !== t ? "lose" : "win");
     $("againBtn").textContent = iHost ? "Play again" : "Waiting for host…";
     $("winSheet").hidden = false;
   }
 
   function renderLobby(v) {
     const you = online.you, iHost = v.host === you && you >= 0;
-    const filled = v.seats.filter((s) => s.kind !== "empty").length;
+    const filled = v.seats.filter((s) => s.kind !== "empty").length, total = v.seats.length;
     const ol = $("lobbySeats");
     ol.innerHTML = v.seats.map((s, i) => {
-      const team = TEAM[E.teamOf(i)];
+      const team = TEAM[E.teamOf(i)] + (v.seats.length === 2 ? "" : " team");
       let name, sub, actions = "";
       if (s.kind === "empty") {
-        name = "Empty seat"; sub = `${team} team`;
+        name = "Empty seat"; sub = team;
         if (you < 0) actions += `<button type="button" class="btn btn-blue btn-small" data-sit="${i}">Sit here</button>`;
         if (iHost) actions += `<button type="button" class="btn btn-line btn-small" data-ai="${i}">+ AI</button>`;
       } else if (s.kind === "ai") {
-        name = s.name; sub = `${team} team · AI player`;
+        name = s.name; sub = `${team} · AI player`;
         if (iHost) actions += `<button type="button" class="btn btn-line btn-small" data-noai="${i}">Remove</button>`;
       } else {
         name = esc(s.name) + (i === you ? " (you)" : "") + (i === v.host ? '<span class="tag-host">host</span>' : "");
-        sub = `${team} team · ${s.connected ? "online" : "away"}`;
+        sub = `${team} · ${s.connected ? "online" : "away"}`;
         if (i === you) actions += `<button type="button" class="btn btn-line btn-small" data-stand="1">Leave seat</button>`;
       }
       const av = s.kind === "empty" ? `<span class="avatar" aria-hidden="true">${i + 1}</span>` : avatar({ name: s.name, mode: s.kind === "ai" ? "muse" : "human" }, i);
       return `<li class="seat${s.kind === "empty" ? " empty" : ""}">${av}<div class="who"><b>${s.kind === "human" ? name : esc(name)}</b><span class="persona">${esc(sub)}</span></div><div class="seat-actions">${actions}</div></li>`;
     }).join("");
+    document.querySelectorAll("#lobbyModes button").forEach((b) => {
+      b.setAttribute("aria-pressed", String(b.dataset.v === (v.mode || "2v2")));
+      b.disabled = !iHost;
+    });
     document.querySelectorAll("#lobbyLevels button").forEach((b) => {
       b.setAttribute("aria-pressed", String(b.dataset.l === v.level));
       b.disabled = !iHost;
     });
     const start = $("lobbyStart");
     start.hidden = !iHost;
-    start.disabled = filled < 4;
+    start.disabled = filled < total;
     $("lobbyStatus").textContent =
-      you < 0 ? "Type your name and pick a seat. Blue (seats 1, 3) plays Green (seats 2, 4)."
-      : iHost ? (filled < 4 ? "Invite friends with the link, or tap + AI to fill empty seats. Then start." : "Everyone's seated. Start when ready!")
+      you < 0 ? (total === 2 ? "Type your name and pick a seat. Blue plays Green, 1 vs 1." : "Type your name and pick a seat. Blue (seats 1, 3) plays Green (seats 2, 4).")
+      : iHost ? (filled < total ? "Invite friends with the link, or tap + AI to fill empty seats. Then start." : "Everyone's seated. Start when ready!")
       : "Waiting for the host to start the game…";
   }
 
@@ -664,6 +695,7 @@
     store.set("seq.name", name);
     if (online && online.you >= 0) online.conn.send({ t: "name", name });
   });
+  document.querySelectorAll("#lobbyModes button").forEach((b) => b.addEventListener("click", () => online && online.conn.send({ t: "mode", mode: b.dataset.v })));
   document.querySelectorAll("#lobbyLevels button").forEach((b) => b.addEventListener("click", () => online && online.conn.send({ t: "level", level: b.dataset.l })));
   $("lobbyStart").addEventListener("click", () => online && online.conn.send({ t: "start" }));
   $("lobbyExit").addEventListener("click", leaveRoom);
@@ -686,6 +718,14 @@
     openRoom(code, false);
   });
 
+  function renderSound() {
+    const on = S.enabled();
+    $("soundBtn").textContent = on ? "🔊" : "🔇";
+    $("soundBtn").setAttribute("aria-label", on ? "Sound on. Tap to mute." : "Sound off. Tap to turn on.");
+    $("soundBtn").setAttribute("aria-pressed", String(on));
+  }
+  $("soundBtn").addEventListener("click", () => { S.toggle(); renderSound(); });
+
   function setPause(v) {
     paused = v;
     $("pauseBtn").innerHTML = paused ? "▶ <span>Resume</span>" : "❚❚ <span>Pause</span>";
@@ -707,10 +747,12 @@
     else if (e.key === "Escape" && selected) { selected = null; render(); }
   });
 
+  renderMode();
   renderSeats();
   renderLevel();
   renderMuseStatus();
   renderResume();
+  renderSound();
   if (O && O.available()) { $("onlineBtn").hidden = false; $("joinForm").hidden = false; }
   const roomParam = (new URLSearchParams(location.search).get("room") || "").toUpperCase();
   if (O && O.available() && O.validCode(roomParam)) openRoom(roomParam, false);

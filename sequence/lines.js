@@ -63,8 +63,9 @@
 
   function line(name, event, ctx, rand) {
     rand = rand || Math.random;
-    const set = (LINES[name] || LINES.Arya)[event];
-    if (!set || rand() > (CHANCE[event] || 0)) return "";
+    let set = (LINES[name] || LINES.Arya)[event];
+    if (set && !ctx.mate) set = set.filter((t) => !t.includes("{mate}")); // 1v1: nobody to talk to
+    if (!set || !set.length || rand() > (CHANCE[event] || 0)) return "";
     const text = set[Math.floor(rand() * set.length)];
     return text.replace(/\{opp\}/g, ctx.opp || "friend").replace(/\{mate\}/g, ctx.mate || "partner");
   }

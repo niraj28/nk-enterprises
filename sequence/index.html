@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Sequence Game with AI Players: Free 2v2 Board Game | N.K.Enterprises</title>
-  <meta name="description" content="Play the Sequence board and card game free in your browser. 2 vs 2 teams, and every seat can be you, a friend on the same phone, or a Gemini-powered AI player.">
+  <meta name="description" content="Play the Sequence board and card game free in your browser. 1 vs 1 or 2 vs 2, and every seat can be you, a friend on the same phone, or a Gemini-powered AI player.">
   <meta property="og:title" content="Play Sequence against AI agents">
   <meta property="og:description" content="Free 2v2 Sequence game. Team up with friends or AI players with their own personalities.">
   <meta property="og:image" content="https://digitallifenotes.blog/assets/og-diwali-lights.jpg">
@@ -20,7 +20,7 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700&family=Hind:wght@400;500;600;700&display=swap">
   <link rel="stylesheet" href="../assets/style.css?v=5">
   <link rel="stylesheet" href="../assets/navigation.css?v=3">
-  <link rel="stylesheet" href="game.css?v=11">
+  <link rel="stylesheet" href="game.css?v=12">
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6116067692659093" crossorigin="anonymous"></script>
 </head>
 <body>
@@ -78,6 +78,13 @@
     <p class="muse-status" id="museStatus"></p>
 
     <div class="level-row">
+      <span class="level-label" id="modeLabel">Mode</span>
+      <div class="level" id="modes" role="group" aria-labelledby="modeLabel">
+        <button type="button" data-v="2v2">2 vs 2</button><button type="button" data-v="1v1">1 vs 1</button>
+      </div>
+      <span class="level-hint" id="modeHint"></span>
+    </div>
+    <div class="level-row">
       <span class="level-label" id="levelLabel">AI level</span>
       <div class="level" id="levels" role="group" aria-labelledby="levelLabel">
         <button type="button" data-l="easy">Easy</button><button type="button" data-l="normal">Normal</button><button type="button" data-l="hard">Hard</button>
@@ -92,6 +99,7 @@
     <details class="rules">
       <summary>How to play</summary>
       <ul>
+        <li><b>2 vs 2:</b> Blue (seats 1, 3) plays Green (seats 2, 4), 6 cards each. <b>1 vs 1:</b> 7 cards each.</li>
         <li>Pick a card from your hand, then tap one of its two matching spaces to drop your team's chip.</li>
         <li><b>J♦ J♣ are wild:</b> place a chip on any open space.</li>
         <li><b>J♠ J♥ take</b> away one opponent chip (not one in a finished line).</li>
@@ -124,6 +132,12 @@
     <label class="name-row"><span>Your name</span><input id="myName" maxlength="16" autocomplete="nickname" placeholder="Type your name"></label>
     <ol class="seats lobby-seats" id="lobbySeats"></ol>
     <div class="level-row">
+      <span class="level-label" id="lobbyModeLabel">Mode</span>
+      <div class="level" id="lobbyModes" role="group" aria-labelledby="lobbyModeLabel">
+        <button type="button" data-v="2v2">2 vs 2</button><button type="button" data-v="1v1">1 vs 1</button>
+      </div>
+    </div>
+    <div class="level-row">
       <span class="level-label" id="lobbyLevelLabel">AI level</span>
       <div class="level" id="lobbyLevels" role="group" aria-labelledby="lobbyLevelLabel">
         <button type="button" data-l="easy">Easy</button><button type="button" data-l="normal">Normal</button><button type="button" data-l="hard">Hard</button>
@@ -140,6 +154,7 @@
         <span class="score s0"><i></i><em>Blue</em> <b id="scoreBlue">0</b>/2</span>
         <span class="score s1"><i></i><em>Green</em> <b id="scoreGreen">0</b>/2</span>
       </div>
+      <button class="tbtn tsound" id="soundBtn" type="button" aria-pressed="true">🔊</button>
       <button class="tbtn" id="pauseBtn" type="button" hidden>❚❚ <span>Pause</span></button>
     </div>
     <ol class="strip" id="players"></ol>
@@ -208,11 +223,12 @@
 
 <script src="engine.js?v=2"></script>
 <script src="brain.js?v=2"></script>
-<script src="lines.js?v=1"></script>
-<script src="muse.js?v=4"></script>
-<script src="room-core.js?v=2"></script>
-<script src="online.js?v=3"></script>
-<script src="game.js?v=10"></script>
+<script src="lines.js?v=2"></script>
+<script src="muse.js?v=5"></script>
+<script src="sound.js?v=1"></script>
+<script src="room-core.js?v=3"></script>
+<script src="online.js?v=4"></script>
+<script src="game.js?v=11"></script>
 <script src="../assets/ads.js?v=1" defer></script>
 <script defer src="/assets/dot.js?v=2"></script>
 </body>
