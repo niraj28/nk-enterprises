@@ -84,13 +84,17 @@
     } catch (e) { return null; }
   }
 
+  // Circuit breaker: after 3 failures in a row (say the free quota is used up), stop asking
+  // for 2 minutes, so AI turns don't each wait for a request that will fail.
+  let failStreak = 0, pausedUntil = 0;
+
   // Returns { ranked entry, say, source: "muse" | "brain", error? }
   async function choose(state, seat, persona, players, chat, level) {
     const ranked = B.analyse(state, seat, level);
     if (!ranked.length) return null;
     const fallback = () => ({ pick: B.pick(ranked, persona.style, Math.random, level), say: "", source: "brain" });
     const url = proxyUrl();
-    if (!url) return fallback();
+    if (!url || Date.now() < pausedUntil) return fallback();
     const shortlist = ranked.slice(0, 8);
     const prompt = buildPrompt(state, seat, persona, players, shortlist, chat.slice(-6), level);
     const ctrl = new AbortController();
@@ -109,8 +113,10 @@
       let pick = shortlist[parsed.choice];
       // guard rails: take the win, and don't ignore an opponent's open 4
       if (level !== "easy" && ranked[0].score >= 200 && pick.score < ranked[0].score - 150) pick = ranked[0];
+      failStreak = 0;
       return { pick, say: parsed.say, source: "muse" };
     } catch (err) {
+      if (++failStreak >= 3) { pausedUntil = Date.now() + 120000; failStreak = 0; }
       return Object.assign(fallback(), { error: err.name === "AbortError" ? "timeout" : err.message });
     } finally {
       clearTimeout(timer);

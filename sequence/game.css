@@ -69,6 +69,50 @@
 .strip li.away { opacity: .6; }
 .toast { position: fixed; z-index: 70; left: 50%; bottom: 24px; transform: translateX(-50%); max-width: min(440px, calc(100% - 32px)); background: var(--blue-ink); color: #fff; padding: 10px 16px; border-radius: 12px; font-size: 15px; box-shadow: 0 14px 30px -12px rgba(0,0,0,.5); }
 
+.btn-daily { grid-column: 1 / -1; }
+.btn-daily .done { font-weight: 600; color: var(--green); }
+.record { display: grid; gap: 10px; padding: 14px 16px; border-radius: 16px; border: 1.5px solid var(--blue-line); background: #fff; }
+.record-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.record-head b { font-family: var(--display); font-size: 19px; color: var(--blue-ink); }
+.record-head span { font-size: 14px; color: var(--muted); }
+.record-nums { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; text-align: center; }
+.record-nums div { background: var(--blue-soft); border-radius: 12px; padding: 8px 4px; line-height: 1.15; }
+.record-nums b { display: block; font-family: var(--display); font-size: 22px; color: var(--blue-ink); }
+.record-nums small { font-size: 12.5px; color: var(--muted); }
+.badges { display: flex; flex-wrap: wrap; gap: 6px; }
+.badge { display: inline-flex; align-items: center; gap: 4px; font-size: 13px; font-weight: 600; padding: 4px 9px; border-radius: 999px; background: var(--yellow-soft); border: 1px solid #f0d27a; color: var(--blue-ink); }
+.badge.locked { background: #f3f5f9; border-color: #e1e6ef; color: #9aa3b5; filter: grayscale(1); }
+.win-extra { display: grid; gap: 10px; }
+.win-extra:empty { display: none; }
+.win-extra .badges { justify-content: center; }
+.win-extra .newbadge { animation: badge-in .5s ease both; }
+@keyframes badge-in { from { transform: scale(.4); opacity: 0; } }
+.win-extra .note { font-weight: 700; color: var(--green); margin: 0; }
+.share-row { display: grid; grid-template-columns: 1fr; gap: 8px; }
+
+/* tutorial */
+.tutorial { text-align: left; }
+.tutorial h2 { text-align: center; }
+.tut-steps { margin: 0; padding: 0; list-style: none; display: grid; gap: 12px; counter-reset: s; }
+.tut-steps li { display: grid; grid-template-columns: 56px 1fr; gap: 12px; align-items: center; font-size: 16px; line-height: 1.35; }
+.tut-ill { display: grid; place-items: center; height: 56px; border-radius: 12px; background: var(--blue-soft); }
+.card.mini { width: 34px; height: 46px; font-size: 14px; color: #c0262d; cursor: default; }
+.cell.mini { width: 36px; height: 36px; font-size: 12px; line-height: 1.05; color: #c0262d; }
+.chips5 { display: flex; gap: 2px; }
+.chips5 i { width: 9px; height: 9px; border-radius: 50%; background: var(--blue); }
+.tut-note { font-size: 14.5px; color: var(--muted); }
+.tutorial .btn { justify-self: center; }
+
+/* sequence highlight and confetti */
+.cell.seqflash { animation: seqflash 1.6s ease; z-index: 3; }
+@keyframes seqflash { 0%, 100% { box-shadow: none; } 20%, 60% { box-shadow: 0 0 0 3px var(--gold), 0 0 18px 6px rgba(255,214,90,.9); transform: scale(1.08); } }
+.confetti { position: fixed; inset: 0; pointer-events: none; z-index: 80; overflow: hidden; }
+.confetti i { position: absolute; top: -12px; width: 8px; height: 14px; border-radius: 2px; animation: fall linear forwards; }
+@keyframes fall { to { transform: translate3d(var(--dx), 105vh, 0) rotate(var(--rot)); } }
+@media (prefers-reduced-motion: reduce) { .cell.seqflash, .confetti, .win-extra .newbadge { animation: none !important; } .confetti { display: none; } }
+
+.install { margin: 0; display: flex; align-items: center; flex-wrap: wrap; gap: 8px; font-size: 14.5px; color: var(--muted); }
+
 /* avatars */
 .avatar { --c: var(--blue); width: 38px; height: 38px; border-radius: 50%; display: grid; place-items: center; flex: none; background: var(--c); color: #fff; font-family: var(--display); font-weight: 700; font-size: 18px; line-height: 1; position: relative; }
 .avatar.t1 { --c: var(--green); }
@@ -183,6 +227,7 @@ body.playing { background: #f4f1ea; }
 }
 @media (max-width: 560px) {
   .quick { grid-template-columns: 1fr; }
+  .record-nums b { font-size: 19px; }
   .resume { grid-template-columns: 1fr 1fr; }
   .lobby-seats .seat { grid-template-columns: auto minmax(0, 1fr); }
   .seat-actions { grid-column: 1 / -1; }

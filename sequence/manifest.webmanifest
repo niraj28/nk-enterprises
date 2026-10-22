@@ -1,0 +1,16 @@
+{
+  "name": "Sequence with AI players",
+  "short_name": "Sequence",
+  "description": "Free Sequence board and card game: 1 vs 1 or 2 vs 2 against AI players or friends online.",
+  "start_url": "/sequence/?source=app",
+  "scope": "/sequence/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f4f1ea",
+  "theme_color": "#06275f",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

@@ -2,6 +2,7 @@
 (function () {
   "use strict";
   const E = window.SeqEngine, B = window.SeqBrain, M = window.SeqMuse, L = window.SeqLines, O = window.SeqOnline;
+  const P = window.SeqProgress;
   const S = window.SeqSound || { play() {}, enabled: () => false, toggle: () => false };
   const $ = (id) => document.getElementById(id);
   const SUIT = { S: "♠", H: "♥", D: "♦", C: "♣" };
@@ -91,22 +92,36 @@
   let state = null, players = [], token = 0, selected = null, revealed = -1, lastCell = -1, flashCell = -1, recent = [];
   let paused = false, chat = [], museWarned = false, lastAllAi = false, lastText = "", bubbleTimer = 0;
   let feedLog = [], lastBanter = -9, gameLevel = "normal";
+  let gameDaily = null, dailyPractice = false, seqSeen = 0; // daily challenge date, replay flag, sequences already highlighted
   let online = null; // { code, conn, you, view, status, gameNo, logShown, awaySeen, winShown }
   const humans = () => players.filter((p) => p.mode === "human").length;
   const over = () => state.winner != null || state.draw;
 
-  function start(allAi) {
+  function start(allAi, daily) {
     lastAllAi = allAi;
-    const cfg = (allAi ? M.PERSONAS.map((p) => ({ name: p.name, mode: "muse" })) : seats).slice(0, seatCount());
-    if (!allAi) store.set("seq.seats", seats);
-    players = cfg.map((s, i) => ({ name: s.name || M.PERSONAS[i].name, mode: s.mode, persona: M.PERSONAS[i] }));
-    state = E.newGame({ seats: players.length });
-    gameLevel = level;
+    gameDaily = daily ? P.today() : null;
+    dailyPractice = !!(daily && P.load().daily[gameDaily]);
+    if (daily) {
+      // the daily challenge: the same deal for everyone, you against the Hard brain (no Gemini, so it's fair)
+      const me = seats[0].mode === "human" ? seats[0].name : "You";
+      players = [{ name: me, mode: "human", persona: M.PERSONAS[0] }, { name: "Arya", mode: "muse", persona: M.PERSONAS[0] }];
+      state = E.newGame({ seats: 2, seed: P.dailySeed(gameDaily) });
+      gameLevel = "hard";
+    } else {
+      const cfg = (allAi ? M.PERSONAS.map((p) => ({ name: p.name, mode: "muse" })) : seats).slice(0, seatCount());
+      if (!allAi) store.set("seq.seats", seats);
+      players = cfg.map((s, i) => ({ name: s.name || M.PERSONAS[i].name, mode: s.mode, persona: M.PERSONAS[i] }));
+      state = E.newGame({ seats: players.length });
+      gameLevel = level;
+    }
+    seqSeen = 0;
     token++; selected = null; revealed = -1; lastCell = -1; recent = []; paused = false; chat = []; museWarned = false; lastText = "";
     feedLog = []; lastBanter = -9;
     $("feed").innerHTML = ""; $("bubble").hidden = true;
     showTable();
-    log("sys", `${teamNames(0)} (Blue) vs ${teamNames(1)} (Green)${players.length === 2 ? ", 1 vs 1" : ""}. AI level: ${gameLevel}. First to 2 sequences wins.`);
+    if (gameDaily) log("sys", `Daily challenge #${P.dailyNo(gameDaily)}${dailyPractice ? " (practice: today's result is already saved)" : ""}. Same deal for everyone today, against the Hard AI. First to 2 sequences wins.`);
+    else log("sys", `${teamNames(0)} (Blue) vs ${teamNames(1)} (Green)${players.length === 2 ? ", 1 vs 1" : ""}. AI level: ${gameLevel}. First to 2 sequences wins.`);
+    if (humans() > 0 && !store.get("seq.tutorial", false)) { $("tutorial").hidden = false; $("tutBtn").focus(); }
     const ais = players.map((p, i) => i).filter((i) => players[i].mode === "muse");
     if (ais.length) { const my = token, sp = ais[Math.floor(Math.random() * ais.length)]; setTimeout(() => my === token && banter(sp, "start"), 500); }
     step();
@@ -135,6 +150,7 @@
     $("table").hidden = true; $("setup").hidden = false; $("cover").hidden = true; $("winSheet").hidden = true;
     renderSeats();
     renderResume();
+    renderRecord();
   }
 
   function step() {
@@ -161,7 +177,9 @@
 
   async function aiTurn(seat, my) {
     const p = players[seat], started = Date.now();
-    const out = await M.choose(state, seat, p.persona, players, chat, gameLevel);
+    const out = gameDaily
+      ? { pick: B.pick(B.analyse(state, seat, "hard"), 0, Math.random, "hard"), say: "", source: "brain" }
+      : await M.choose(state, seat, p.persona, players, chat, gameLevel);
     const wait = Math.max(0, Number($("speed").value) - (Date.now() - started));
     await new Promise((r) => setTimeout(r, wait));
     while (paused && my === token) await new Promise((r) => setTimeout(r, 200));
@@ -256,8 +274,17 @@
       const winAi = players.map((p, i) => i).filter((i) => E.teamOf(i) === t && players[i].mode === "muse");
       const loseAi = players.map((p, i) => i).filter((i) => E.teamOf(i) !== t && players[i].mode === "muse");
       if (winAi.length) banter(winAi[0], "win");
-      if (loseAi.length) setTimeout(() => state && banter(loseAi[0], "lose"), 900);
+      const my = token;
+      if (loseAi.length) setTimeout(() => my === token && banter(loseAi[0], "lose"), 900);
     }
+    $("winExtra").innerHTML = "";
+    if (h.length === 1) {
+      const result = state.draw ? "draw" : youWon ? "win" : "loss";
+      const rec = P.record({ result, mode: players.length === 2 ? "1v1" : "2v2", level: gameLevel, moves: state.moveNo, daily: gameDaily && !dailyPractice ? gameDaily : null });
+      showWinExtras(rec, result, state.moveNo);
+      if (youWon) confetti();
+    }
+    $("againBtn").textContent = gameDaily ? "Play a normal game" : "Play again";
     $("winSheet").hidden = false;
     $("againBtn").focus();
   }
@@ -283,6 +310,7 @@
     $("cover").hidden = false;
     $("coverBtn").focus();
     S.play("turn");
+    buzz(35);
   }
   $("coverBtn").addEventListener("click", () => { revealed = state.turn; $("cover").hidden = true; render(); });
 
@@ -376,6 +404,16 @@
       if (card !== "FREE") b.setAttribute("aria-label", `${E.cellName(i)} ${label(card)}${t !== -1 ? ", " + TEAM[t] + " chip" : ""}`);
     });
     flashCell = -1;
+    const seqNow = state.sequences[0].length + state.sequences[1].length;
+    if (seqNow > seqSeen) {
+      // glow the line that was just completed
+      const newest = [...state.sequences[0], ...state.sequences[1]].slice(-1)[0] || [];
+      const ownTeam = viewerSeat() >= 0 && state.sequences[E.teamOf(viewerSeat())].some((q) => q === newest);
+      newest.forEach((i) => { cellEls[i].classList.remove("seqflash"); void cellEls[i].offsetWidth; cellEls[i].classList.add("seqflash"); });
+      setTimeout(() => newest.forEach((i) => cellEls[i].classList.remove("seqflash")), 1700);
+      if (ownTeam) buzz([30, 40, 30]);
+    }
+    seqSeen = seqNow;
     $("scoreBlue").textContent = state.sequences[0].length;
     $("scoreGreen").textContent = state.sequences[1].length;
 
@@ -460,7 +498,7 @@
   function save() {
     if (!state || over()) return;
     store.set("seq.save", {
-      v: 1, state, level: gameLevel, lastAllAi, chat, feedLog, lastText, recent, lastCell,
+      v: 1, state, level: gameLevel, lastAllAi, chat, feedLog, lastText, recent, lastCell, gameDaily, dailyPractice,
       players: players.map((p) => ({ name: p.name, mode: p.mode }))
     });
   }
@@ -479,6 +517,7 @@
     const s = loadSave();
     if (!s) return renderResume();
     state = s.state; gameLevel = s.level || "normal"; lastAllAi = !!s.lastAllAi;
+    gameDaily = s.gameDaily || null; dailyPractice = !!s.dailyPractice; seqSeen = state.sequences[0].length + state.sequences[1].length;
     players = s.players.map((p, i) => ({ name: p.name, mode: p.mode, persona: M.PERSONAS[i] }));
     chat = s.chat || []; feedLog = s.feedLog || []; lastText = s.lastText || ""; recent = s.recent || []; lastCell = s.lastCell != null ? s.lastCell : -1;
     token++; selected = null; revealed = -1; paused = false; museWarned = false; lastBanter = state.moveNo;
@@ -535,7 +574,7 @@
     history.replaceState(null, "", location.pathname);
     document.body.classList.remove("in-lobby", "playing");
     $("lobby").hidden = true; $("table").hidden = true; $("winSheet").hidden = true; $("setup").hidden = false;
-    renderSeats(); renderResume();
+    renderSeats(); renderResume(); renderRecord();
   }
 
   function onStatus(status) {
@@ -587,7 +626,7 @@
     if (g.moveNo !== prevMove && v.lastCell !== lastCell) flashCell = v.lastCell;
     lastCell = v.lastCell; recent = v.recent || [];
     if (selected && (prevTurn !== g.turn || !g.hand.includes(selected))) selected = null;
-    if (prevTurn !== -1 && prevTurn !== g.turn && g.turn === v.you && v.phase === "playing" && !(g.winner != null || g.draw)) setTimeout(() => S.play("turn"), 350);
+    if (prevTurn !== -1 && prevTurn !== g.turn && g.turn === v.you && v.phase === "playing" && !(g.winner != null || g.draw)) setTimeout(() => { S.play("turn"); buzz(35); }, 350);
     if ($("table").hidden) { document.body.classList.remove("in-lobby"); $("lobby").hidden = true; showTable(); }
     syncFeed(v);
     render();
@@ -635,6 +674,13 @@
     $("againBtn").disabled = !iHost;
     S.play(mine >= 0 && mine !== t ? "lose" : "win");
     $("againBtn").textContent = iHost ? "Play again" : "Waiting for host…";
+    $("winExtra").innerHTML = "";
+    if (mine >= 0) {
+      const result = state.draw ? "draw" : mine === t ? "win" : "loss";
+      const rec = P.record({ result, mode: v.seats.length === 2 ? "1v1" : "2v2", level: v.level, moves: state.moveNo, online: true });
+      showWinExtras(rec, result, state.moveNo);
+      if (result === "win") confetti();
+    }
     $("winSheet").hidden = false;
   }
 
@@ -718,6 +764,57 @@
     openRoom(code, false);
   });
 
+  // ---- Progress: record card, badges, sharing, confetti, vibration ----
+  const gameUrl = () => location.origin + location.pathname;
+  function renderRecord() {
+    const st = P.load(), day = P.today(), done = st.daily[day];
+    $("dailyBtn").innerHTML = `📅 Daily challenge #${P.dailyNo(day)}` +
+      (done ? ` <span class="done">${done.result === "win" ? "✓ won in " + done.moves + " moves" : "· played"}</span>` : " <span>· new today</span>");
+    const badges = P.BADGES.map((b) => `<span class="badge${st.badges[b.id] ? "" : " locked"}" title="${esc(b.hint)}">${b.icon} ${esc(b.name)}</span>`).join("");
+    const rate = st.games ? Math.round(100 * st.wins / st.games) : 0;
+    $("record").innerHTML = st.games
+      ? `<div class="record-head"><b>Your record</b><span>${st.fastest ? "Fastest win: " + st.fastest + " moves" : "Keep playing to set a fastest win"}</span></div>` +
+        `<div class="record-nums"><div><b>${st.games}</b><small>played</small></div><div><b>${st.wins}</b><small>won</small></div><div><b>${rate}%</b><small>win rate</small></div><div><b>${st.streak}</b><small>streak${st.bestStreak > 1 ? " (best " + st.bestStreak + ")" : ""}</small></div></div>` +
+        `<div class="badges" aria-label="Badges">${badges}</div>`
+      : `<div class="record-head"><b>Your record</b><span>Win games to collect badges</span></div><div class="badges" aria-label="Badges">${badges}</div>`;
+  }
+  function showWinExtras(rec, result, moves) {
+    const bits = [];
+    if (rec.fastest) bits.push(`<p class="note">New fastest win: ${moves} moves!</p>`);
+    if (rec.newBadges.length) bits.push(`<div class="badges">${rec.newBadges.map((b) => `<span class="badge newbadge">${b.icon} ${esc(b.name)}</span>`).join("")}</div>`);
+    if (rec.stats.streak > 1 && result === "win") bits.push(`<p class="note">🔥 ${rec.stats.streak} wins in a row</p>`);
+    let text = "";
+    if (gameDaily && !online) {
+      text = `Sequence Daily #${P.dailyNo(gameDaily)}: ${result === "win" ? "🏆 I beat the Hard AI" : result === "draw" ? "🤝 a draw with the Hard AI" : "😅 the Hard AI got me"} in ${moves} moves. Same deal for everyone today. Your turn: ${gameUrl()}?daily`;
+    } else if (result === "win") {
+      text = `🏆 I won a game of Sequence ${online ? "online" : "against the " + gameLevel + " AI"} in ${moves} moves! Play free: ${gameUrl()}`;
+    }
+    if (text) bits.push(`<div class="share-row"><a class="btn btn-green" href="https://wa.me/?text=${encodeURIComponent(text)}" target="_blank" rel="noopener">Share on WhatsApp</a></div>`);
+    $("winExtra").innerHTML = bits.join("");
+  }
+  function confetti() {
+    if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const box = document.createElement("div");
+    box.className = "confetti";
+    const colors = ["#ffc72c", "#0b3d91", "#18a34a", "#e8463c", "#ffffff"];
+    for (let i = 0; i < 70; i++) {
+      const p = document.createElement("i");
+      p.style.left = Math.random() * 100 + "%";
+      p.style.background = colors[i % colors.length];
+      p.style.setProperty("--dx", (Math.random() * 160 - 80) + "px");
+      p.style.setProperty("--rot", (Math.random() * 720 - 360) + "deg");
+      p.style.animationDuration = 1.8 + Math.random() * 1.6 + "s";
+      p.style.animationDelay = Math.random() * 0.4 + "s";
+      box.appendChild(p);
+    }
+    document.body.appendChild(box);
+    setTimeout(() => box.remove(), 4200);
+  }
+  function buzz(pattern) { if (S.enabled() && navigator.vibrate) { try { navigator.vibrate(pattern); } catch (e) { /* not allowed */ } } }
+
+  $("tutBtn").addEventListener("click", () => { store.set("seq.tutorial", true); $("tutorial").hidden = true; });
+  $("dailyBtn").addEventListener("click", () => start(false, true));
+
   function renderSound() {
     const on = S.enabled();
     $("soundBtn").textContent = on ? "🔊" : "🔇";
@@ -738,7 +835,7 @@
   $("newBtn").addEventListener("click", exit);
   $("againBtn").addEventListener("click", () => {
     if (online) { online.conn.send({ t: "start" }); $("winSheet").hidden = true; return; }
-    start(lastAllAi);
+    start(lastAllAi, false);
   });
   $("closeWin").addEventListener("click", () => { $("winSheet").hidden = true; });
   $("pauseBtn").addEventListener("click", () => setPause(!paused));
@@ -753,7 +850,33 @@
   renderMuseStatus();
   renderResume();
   renderSound();
+  renderRecord();
+
+  // ---- Install as an app (PWA) and offline play ----
+  if ("serviceWorker" in navigator && (location.protocol === "https:" || O.isDev())) {
+    navigator.serviceWorker.register("sw.js").catch(() => { /* offline support is optional */ });
+  }
+  let installEvent = null;
+  const standalone = matchMedia("(display-mode: standalone)").matches || navigator.standalone;
+  window.addEventListener("beforeinstallprompt", (e) => {
+    e.preventDefault();
+    installEvent = e;
+    if (!standalone) { $("installRow").hidden = false; $("installHint").textContent = " Plays offline against the AI."; }
+  });
+  $("installBtn").addEventListener("click", async () => {
+    if (!installEvent) return;
+    installEvent.prompt();
+    await installEvent.userChoice.catch(() => null);
+    installEvent = null;
+    $("installRow").hidden = true;
+  });
+  // iPhone and iPad have no install button, only "Add to Home Screen" in the Share menu
+  if (!standalone && /iPhone|iPad|iPod/.test(navigator.userAgent)) {
+    $("installRow").hidden = false; $("installBtn").hidden = true;
+    $("installHint").textContent = "📲 Play it like an app: tap Share, then “Add to Home Screen”.";
+  }
   if (O && O.available()) { $("onlineBtn").hidden = false; $("joinForm").hidden = false; }
   const roomParam = (new URLSearchParams(location.search).get("room") || "").toUpperCase();
   if (O && O.available() && O.validCode(roomParam)) openRoom(roomParam, false);
+  else if (new URLSearchParams(location.search).has("daily")) { history.replaceState(null, "", location.pathname); start(false, true); }
 })();

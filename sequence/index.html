@@ -13,14 +13,18 @@
   <meta property="og:site_name" content="N.K.Enterprises">
   <meta name="twitter:card" content="summary">
   <link rel="canonical" href="https://digitallifenotes.blog/sequence/">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Sequence">
   <meta name="theme-color" content="#06275f">
-  <link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700&family=Hind:wght@400;500;600;700&display=swap">
   <link rel="stylesheet" href="../assets/style.css?v=5">
   <link rel="stylesheet" href="../assets/navigation.css?v=3">
-  <link rel="stylesheet" href="game.css?v=12">
+  <link rel="stylesheet" href="game.css?v=14">
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6116067692659093" crossorigin="anonymous"></script>
 </head>
 <body>
@@ -57,7 +61,7 @@
 </header>
 
 <main>
-  <div class="page-head game-head"><div class="wrap"><h1>Sequence with AI players</h1><p>2 vs 2. Play with friends on one phone, or team up with AI players powered by Google Gemini.</p></div></div>
+  <div class="page-head game-head"><div class="wrap"><h1>Sequence with AI players</h1><p>1 vs 1 or 2 vs 2. Play friends online or on one phone, or take on AI players powered by Google Gemini. New daily challenge every day.</p></div></div>
 
   <section class="wrap setup" id="setup" aria-label="Game setup">
     <div class="resume" id="resume" hidden>
@@ -69,13 +73,16 @@
       <button class="btn btn-yellow btn-play" id="startBtn" type="button">▶ Play now</button>
       <button class="btn btn-line" id="watchBtn" type="button">👀 Watch 4 AI agents</button>
       <button class="btn btn-green btn-online" id="onlineBtn" type="button" hidden>🌐 Play online with friends</button>
+      <button class="btn btn-line btn-daily" id="dailyBtn" type="button">📅 Daily challenge</button>
     </div>
+    <section class="record" id="record" aria-label="Your record"></section>
     <form class="join" id="joinForm" hidden>
       <label for="joinCode">Have a room code?</label>
       <input id="joinCode" maxlength="5" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="ABCDE">
       <button class="btn btn-line btn-small" type="submit">Join</button>
     </form>
     <p class="muse-status" id="museStatus"></p>
+    <p class="install" id="installRow" hidden><button class="btn btn-line btn-small" id="installBtn" type="button">📲 Install as an app</button><span id="installHint"></span></p>
 
     <div class="level-row">
       <span class="level-label" id="modeLabel">Mode</span>
@@ -183,6 +190,19 @@
 
 <div class="toast" id="toast" hidden role="status"></div>
 
+<div class="cover" id="tutorial" hidden role="dialog" aria-modal="true" aria-labelledby="tutTitle">
+  <div class="cover-card tutorial">
+    <h2 id="tutTitle">How to play in 3 taps</h2>
+    <ol class="tut-steps">
+      <li><span class="tut-ill"><span class="card mini">7♦</span></span><b>Tap a card</b> in your hand.</li>
+      <li><span class="tut-ill"><span class="cell mini legal">7<br>♦</span></span><b>Tap a glowing space</b> to drop your chip there.</li>
+      <li><span class="tut-ill"><span class="chips5"><i></i><i></i><i></i><i></i><i></i></span></span><b>Make 5 in a row</b>, twice, before the other side. ★ corners count for everyone.</li>
+    </ol>
+    <p class="tut-note">Jacks are special: <b>J♦ J♣</b> go anywhere, <b>J♠ J♥</b> take away a rival chip.</p>
+    <button class="btn btn-yellow" id="tutBtn" type="button">Let's play</button>
+  </div>
+</div>
+
 <div class="cover" id="cover" hidden role="dialog" aria-modal="true" aria-labelledby="coverTitle">
   <div class="cover-card">
     <div class="avatar big" id="coverAvatar"></div>
@@ -197,6 +217,7 @@
     <div class="trophy" aria-hidden="true">🏆</div>
     <h2 id="winTitle"></h2>
     <p id="winText"></p>
+    <div class="win-extra" id="winExtra"></div>
     <div class="cover-actions">
       <button class="btn btn-yellow" id="againBtn" type="button">Play again</button>
       <button class="btn btn-line" id="closeWin" type="button">See the board</button>
@@ -224,11 +245,12 @@
 <script src="engine.js?v=2"></script>
 <script src="brain.js?v=2"></script>
 <script src="lines.js?v=2"></script>
-<script src="muse.js?v=5"></script>
+<script src="muse.js?v=6"></script>
 <script src="sound.js?v=1"></script>
+<script src="progress.js?v=1"></script>
 <script src="room-core.js?v=3"></script>
 <script src="online.js?v=4"></script>
-<script src="game.js?v=11"></script>
+<script src="game.js?v=13"></script>
 <script src="../assets/ads.js?v=1" defer></script>
 <script defer src="/assets/dot.js?v=2"></script>
 </body>
