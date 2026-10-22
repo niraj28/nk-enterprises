@@ -1,12 +1,12 @@
-/* Muse agents: each AI seat asks Meta's Muse model (through the site's proxy Worker) to pick
-   from the brain's shortlist and to say something at the table. If Muse can't be reached,
+/* AI agents: each AI seat asks a language model (Google Gemini, through the site's Worker) to
+   pick from the brain's shortlist and to say something at the table. If it can't be reached,
    or answers with something unusable, the seat quietly falls back to the built-in brain. */
 (function (root) {
   "use strict";
   const E = root.SeqEngine, B = root.SeqBrain;
 
   // Set this to your deployed Worker URL (see sequence/worker/README.md). Empty = offline brain.
-  const DEFAULT_PROXY = "";
+  const DEFAULT_PROXY = "https://sequence-game.sqnce.workers.dev";
 
   const PERSONAS = [
     { name: "Arya", style: 0, voice: "a calm, precise strategist who explains plans in one crisp line" },

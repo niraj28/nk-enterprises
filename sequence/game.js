@@ -66,7 +66,7 @@
   function renderMuseStatus() {
     const url = M.proxyUrl(), el = $("museStatus");
     el.className = "muse-status" + (url ? " on" : "");
-    el.textContent = url ? "Muse AI is connected." : "AI seats use the built-in brain until Muse is connected.";
+    el.textContent = url ? "AI players think with Google Gemini." : "AI seats use the built-in brain.";
     $("proxyInput").value = url;
   }
   $("proxySave").addEventListener("click", () => {
@@ -154,7 +154,7 @@
     await new Promise((r) => setTimeout(r, wait));
     while (paused && my === token) await new Promise((r) => setTimeout(r, 200));
     if (my !== token) return;
-    if (out.error && !museWarned) { museWarned = true; log("sys", `Muse didn't answer (${out.error}), so the built-in brain is filling in.`); }
+    if (out.error && !museWarned) { museWarned = true; log("sys", `Gemini didn't answer (${out.error}), so the built-in brain is filling in.`); }
     const res = play(seat, out.pick, out.source);
     if (out.say) { say(seat, out.say); lastBanter = state.moveNo; }
     else banter(seat, eventFor(out.pick, res), seat);
@@ -178,7 +178,7 @@
     recent = [m.cell, ...recent.filter((c) => c !== m.cell)].slice(0, 3);
     const d = describe(p, m, res, pick, p.mode === "human" && humans() === 1);
     lastText = d.what + (d.note ? " · " + d.note : "");
-    log("move", `<b>${esc(d.what)}</b>${d.note ? " · " + esc(d.note) : ""}` + (source ? `<span class="src">${source === "muse" ? "Muse" : "brain"}</span>` : ""));
+    log("move", `<b>${esc(d.what)}</b>${d.note ? " · " + esc(d.note) : ""}` + (source ? `<span class="src">${source === "muse" ? "Gemini" : "brain"}</span>` : ""));
     if (res.made) {
       const msg = `🎉 ${TEAM[res.team]} made a sequence! (${state.sequences[res.team].length}/2)`;
       log("big", msg);

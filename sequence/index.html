@@ -4,9 +4,9 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Sequence Game with AI Players: Free 2v2 Board Game | N.K.Enterprises</title>
-  <meta name="description" content="Play the Sequence board and card game free in your browser. 2 vs 2 teams, and every seat can be you, a friend on the same phone, or a Muse AI agent.">
+  <meta name="description" content="Play the Sequence board and card game free in your browser. 2 vs 2 teams, and every seat can be you, a friend on the same phone, or a Gemini-powered AI player.">
   <meta property="og:title" content="Play Sequence against AI agents">
-  <meta property="og:description" content="Free 2v2 Sequence game. Team up with friends or Muse AI players with their own personalities.">
+  <meta property="og:description" content="Free 2v2 Sequence game. Team up with friends or AI players with their own personalities.">
   <meta property="og:image" content="https://digitallifenotes.blog/assets/og-diwali-lights.jpg">
   <meta property="og:url" content="https://digitallifenotes.blog/sequence/">
   <meta property="og:type" content="website">
@@ -57,7 +57,7 @@
 </header>
 
 <main>
-  <div class="page-head game-head"><div class="wrap"><h1>Sequence with AI players</h1><p>2 vs 2. Play with friends on one phone, or team up with Muse AI agents.</p></div></div>
+  <div class="page-head game-head"><div class="wrap"><h1>Sequence with AI players</h1><p>2 vs 2. Play with friends on one phone, or team up with AI players powered by Google Gemini.</p></div></div>
 
   <section class="wrap setup" id="setup" aria-label="Game setup">
     <div class="resume" id="resume" hidden>
@@ -100,8 +100,8 @@
       </ul>
     </details>
     <details class="rules">
-      <summary>Muse connection (site owner)</summary>
-      <p>AI seats call Meta's Muse through your proxy Worker. Without one they use the free built-in brain. The API key stays in the Worker.</p>
+      <summary>AI connection (site owner)</summary>
+      <p>AI seats ask Google Gemini through the site's Cloudflare Worker. If Gemini is busy, they use the free built-in brain. The API key stays in the Worker.</p>
       <label class="proxy-row"><span>Worker URL</span><input type="url" id="proxyInput" placeholder="https://muse-proxy.your-name.workers.dev" autocomplete="off"></label>
       <button class="btn btn-line btn-small" id="proxySave" type="button">Save on this device</button>
     </details>
@@ -209,10 +209,10 @@
 <script src="engine.js?v=2"></script>
 <script src="brain.js?v=2"></script>
 <script src="lines.js?v=1"></script>
-<script src="muse.js?v=3"></script>
+<script src="muse.js?v=4"></script>
 <script src="room-core.js?v=1"></script>
 <script src="online.js?v=3"></script>
-<script src="game.js?v=8"></script>
+<script src="game.js?v=9"></script>
 <script src="../assets/ads.js?v=1" defer></script>
 <script defer src="/assets/dot.js?v=2"></script>
 </body>
