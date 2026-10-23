@@ -37,7 +37,9 @@
   }
 
   function scoreMove(state, seat, move, level) {
-    const team = E.teamOf(seat), opp = 1 - team, notes = [], hard = level === "hard";
+    const team = E.teamOf(seat, state.seats), notes = [], hard = level === "hard";
+    const opps = [];
+    for (let t = 0; t < state.sequences.length; t++) if (t !== team) opps.push(t);
     const ATK = hard ? HARD.attack : ATTACK, BLK = hard ? HARD.block : BLOCK;
     let score = 0, bestOwn = 0, bestBlock = 0, fours = 0, sure = false;
     // Hard only: card counting from public info (discard pile) and our own hand
@@ -56,11 +58,13 @@
             if (hard && gap != null && (holdWild || hand.includes(E.BOARD[gap]))) sure = true;
           }
         }
-        const b = count(state, win, opp, move.cell);
-        if (b.opp - countCorners(win) <= 0) {
-          let w = BLK[b.own];
-          if (hard && b.own === 4 && gone(E.BOARD[move.cell]) >= 2) w -= 150; // they'd need a wild jack
-          score += w; bestBlock = Math.max(bestBlock, b.own);
+        for (const opp of opps) { // lines only that rival owns (with corners) that this chip would cut
+          const b = count(state, win, opp, move.cell);
+          if (b.opp - countCorners(win) <= 0) {
+            let w = BLK[b.own];
+            if (hard && b.own === 4 && gone(E.BOARD[move.cell]) >= 2) w -= 150; // they'd need a wild jack
+            score += w; bestBlock = Math.max(bestBlock, b.own);
+          }
         }
       }
       if (sure) score += 250;
@@ -79,6 +83,7 @@
       if (E.TWO_EYED.has(move.card)) { score -= made ? 0 : hard ? 70 : 35; notes.push("uses a wild jack"); }
     } else {
       let lost = 0, breaks4 = false;
+      const opp = state.chips[move.cell]; // the rival whose chip comes off
       for (const win of WINDOWS[move.cell]) {
         const b = count(state, win, opp, -1);
         if (b.opp - countCorners(win) <= 0) { lost += ATK[b.own]; if (b.own >= 4) breaks4 = true; }

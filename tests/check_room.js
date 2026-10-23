@@ -142,8 +142,20 @@ if (globalThis.SeqMuse) {
     assert(!JSON.stringify(v).includes(JSON.stringify(r3.state.hands[t])), "1v1 hands stay private");
   }
   assert(r3.phase === "over", "1v1 room game finished");
+  r3.handle(host, { t: "mode", mode: "3p" }, now, rand);
+  assert(r3.seats.length === 3 && r3.seats[2].kind === "empty", "3 players adds one empty seat");
+  r3.handle(host, { t: "ai", seat: 2, on: true }, now, rand);
+  r3.handle(host, { t: "start" }, now, rand);
+  assert(r3.state.teams === 3 && r3.state.needed === 1 && r3.view(1).game.hand.length === 6, "3-player room game");
+  let n3 = 0;
+  while (r3.phase === "playing" && n3++ < 400) {
+    if (r3.aiPending()) { r3.aiMove(rand); continue; }
+    const t = r3.state.turn, mv = E.legalMoves(r3.state, t)[0];
+    assert(!r3.handle(t === 0 ? host : guest, { t: "move", ...mv }, now, rand).reply, "3p move accepted");
+  }
+  assert(r3.phase === "over", "3-player room game finished");
   r3.handle(host, { t: "mode", mode: "2v2" }, now, rand);
-  assert(r3.seats.length === 4 && r3.seats[2].kind === "empty", "back to 2v2 adds empty seats");
+  assert(r3.seats.length === 4 && r3.seats[3].kind === "empty", "back to 2v2 adds empty seats");
 }
 
 // quick match: a public room starts by itself after the wait, filling empty seats with AI
@@ -172,4 +184,4 @@ assert(send(c, { t: "start" }).reply.t === "error", "only host restarts");
 send(a, { t: "start" });
 assert(room.phase === "playing" && room.gameNo === 2, "play again");
 
-out(`PASS: rooms (quick match auto-start, reactions, 1v1 and 2v2, create, seats, host, AI fill-in, takeover and return, ${steps} turns, private hands, save/restore, chat).`);
+out(`PASS: rooms (3 players, quick match auto-start, reactions, 1v1 and 2v2, create, seats, host, AI fill-in, takeover and return, ${steps} turns, private hands, save/restore, chat).`);

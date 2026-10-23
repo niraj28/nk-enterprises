@@ -41,7 +41,9 @@
   BOARD.forEach((c, i) => { if (c !== "FREE") (CELLS_FOR[c] = CELLS_FOR[c] || []).push(i); });
 
   const isJack = (c) => c[0] === "J";
-  const teamOf = (seat) => seat % 2;
+  // 2 or 4 seats: two teams (seats alternate). 3 seats: everyone for themselves.
+  const teamCount = (seats) => (seats === 3 ? 3 : 2);
+  const teamOf = (seat, seats) => seat % teamCount(seats || 2);
   const cellName = (i) => "ABCDEFGHIJ"[Math.floor(i / SIZE)] + ((i % SIZE) + 1);
 
   function newDeck(rand) {
@@ -56,11 +58,12 @@
     const seed = opts.seed != null ? opts.seed : Math.floor(Math.random() * 2 ** 31);
     const rand = rng(seed);
     const handSize = { 2: 7, 3: 6, 4: 6, 6: 5, 8: 4 }[seats] || 6;
+    const teams = teamCount(seats);
     const state = {
-      seed, seats, teams: 2, needed: 2,
+      seed, seats, teams, needed: teams === 3 ? 1 : 2, // official rules: 3 teams need one sequence
       chips: new Array(100).fill(-1),         // team index per cell, -1 empty
-      seqCells: [[], []],                      // cells locked in a completed sequence, per team
-      sequences: [[], []],                     // list of 5-cell arrays, per team
+      seqCells: Array.from({ length: teams }, () => []), // cells locked in a completed sequence, per team
+      sequences: Array.from({ length: teams }, () => []), // list of 5-cell arrays, per team
       deck: newDeck(rand), discard: [],
       hands: [], turn: 0, moveNo: 0, winner: null, draw: false,
       _rand: seed ^ 0x9e3779b9
@@ -80,7 +83,7 @@
   }
 
   function legalMoves(state, seat) {
-    const team = teamOf(seat), moves = [], seen = new Set();
+    const team = teamOf(seat, state.seats), moves = [], seen = new Set();
     state.hands[seat].forEach((card, hand) => {
       if (seen.has(card)) return; // identical cards give identical moves
       seen.add(card);
@@ -147,7 +150,7 @@
     if (seat !== state.turn) throw new Error("Not this seat's turn");
     const legal = legalMoves(state, seat).find((m) => m.type === move.type && m.cell === move.cell && m.card === move.card);
     if (!legal) throw new Error("Illegal move");
-    const team = teamOf(seat), hand = state.hands[seat];
+    const team = teamOf(seat, state.seats), hand = state.hands[seat];
     hand.splice(hand.indexOf(move.card), 1);
     state.discard.push(move.card);
     const result = { seat, team, type: move.type, card: move.card, cell: move.cell, made: 0 };
@@ -179,7 +182,7 @@
   }
 
   const api = {
-    BOARD, CELLS_FOR, CORNERS, DIRS, SIZE, ONE_EYED, TWO_EYED,
+    BOARD, CELLS_FOR, CORNERS, DIRS, SIZE, ONE_EYED, TWO_EYED, teamCount,
     newGame, clone, legalMoves, applyMove, pass, tradeDeadCard, isDead, isJack, isLocked,
     owns, teamOf, cellName, checkSequences, rng
   };

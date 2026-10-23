@@ -28,7 +28,7 @@
       let line = "ABCDEFGHIJ"[r] + "   ";
       for (let c = 0; c < 10; c++) {
         const i = r * 10 + c, t = state.chips[i];
-        let ch = E.CORNERS.has(i) ? "*" : t === 0 ? "b" : t === 1 ? "g" : ".";
+        let ch = E.CORNERS.has(i) ? "*" : t === -1 ? "." : "bgr"[t];
         if (t !== -1 && E.isLocked(state, i)) ch = ch.toUpperCase();
         line += " " + ch + " ";
       }
@@ -44,14 +44,16 @@
   };
 
   function buildPrompt(state, seat, persona, players, shortlist, chat, level) {
-    const team = E.teamOf(seat), teamName = ["Blue", "Green"][team];
-    const mate = players.find((p, i) => i !== seat && E.teamOf(i) === team);
+    const team = E.teamOf(seat, state.seats), teamName = ["Blue", "Green", "Red"][team];
+    const mate = players.find((p, i) => i !== seat && E.teamOf(i, state.seats) === team);
     const system =
-      (state.seats === 2
+      (state.seats === 3
+        ? `You are ${persona.name}, an AI player in a 3-player Sequence board game, everyone for themselves. Your personality: ${persona.voice}. You play ${teamName}. `
+        : state.seats === 2
         ? `You are ${persona.name}, an AI player in a 1-vs-1 Sequence board game. Your personality: ${persona.voice}. You play ${teamName}. `
         : `You are ${persona.name}, an AI player in a 4-player Sequence board game (two teams of two). ` +
           `Your personality: ${persona.voice}. You are on team ${teamName} with ${mate ? mate.name : "a partner"}. `) +
-      `Win by making ${state.needed} lines of 5 chips. Corners (*) count for everyone. ` +
+      `Win by making ${state.needed} line${state.needed > 1 ? "s" : ""} of 5 chips. Corners (*) count for everyone. ` +
       `Pick ONE move from the numbered options. Prefer completing or blocking 4-in-a-row, save wild jacks for when they matter. ` +
       `${LEVEL_HINT[level] || LEVEL_HINT.normal} ` +
       `Then say one short table-talk line (max 18 words). Never name or hint at the cards in your hand, and never say which move number you chose. ` +
@@ -60,8 +62,8 @@
       `${n + 1}. ${s.move.type === "remove" ? "Remove opponent chip at" : "Place chip at"} ${E.cellName(s.move.cell)} using ${label(s.move.card)} - ${s.notes.join(", ")} (engine score ${s.score})`
     ).join("\n");
     const user =
-      `Board (b = Blue, g = Green, capitals = locked in a finished sequence, * = free corner, rows A-J, columns 1-10):\n${boardText(state)}\n\n` +
-      `Sequences: Blue ${state.sequences[0].length}, Green ${state.sequences[1].length}. Cards left in deck: ${state.deck.length}.\n` +
+      `Board (b = Blue, g = Green${state.seats === 3 ? ", r = Red" : ""}, capitals = locked in a finished sequence, * = free corner, rows A-J, columns 1-10):\n${boardText(state)}\n\n` +
+      `Sequences: ${state.sequences.map((q, t) => ["Blue", "Green", "Red"][t] + " " + q.length).join(", ")}. Cards left in deck: ${state.deck.length}.\n` +
       `Your hand: ${state.hands[seat].map(label).join(" ")}\n` +
       (chat.length ? `Recent table talk:\n${chat.map((m) => `${m.who}: ${m.text}`).join("\n")}\n` : "") +
       `\nYour options:\n${options}`;
@@ -95,6 +97,7 @@
     const fallback = () => ({ pick: B.pick(ranked, persona.style, Math.random, level), say: "", source: "brain" });
     const url = proxyUrl();
     if (!url || Date.now() < pausedUntil) return fallback();
+    if (ranked[0].score >= 200) return fallback(); // a win to take or a four to block: no need to wait for the model
     const shortlist = ranked.slice(0, 8);
     const prompt = buildPrompt(state, seat, persona, players, shortlist, chat.slice(-6), level);
     const ctrl = new AbortController();

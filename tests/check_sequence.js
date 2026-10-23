@@ -122,6 +122,33 @@ for (let g = 0; g < 30; g++) {
 }
 assert(oneWins >= 28, "1v1 games finish: " + oneWins);
 
+// 3 players: three teams, 6 cards, one sequence wins, both rivals can be blocked or removed
+let threeWins = 0, threeMoves = 0;
+for (let g = 0; g < 40; g++) {
+  const st = E.newGame({ seats: 3, seed: 8000 + g });
+  assert(st.teams === 3 && st.needed === 1 && st.sequences.length === 3 && st.hands.every((h) => h.length === 6), "3-player setup");
+  while (st.winner == null && !st.draw) {
+    E.tradeDeadCard(st, st.turn);
+    const ranked = B.analyse(st, st.turn, "normal");
+    if (!ranked.length) { E.pass(st, st.turn); continue; }
+    E.applyMove(st, st.turn, B.pick(ranked, 0.5, Math.random, "normal").move);
+  }
+  if (st.winner != null) { threeWins++; assert(st.sequences[st.winner].length >= 1 && st.sequences.every((q, i) => i === st.winner || q.length === 0), "first sequence wins"); }
+  threeMoves += st.moveNo;
+}
+assert(threeWins >= 38, "3-player games finish: " + threeWins);
+{
+  const st = E.newGame({ seats: 3, seed: 1 });
+  st.chips[44] = 1; st.chips[45] = 2; st.hands[0] = ["JS"];
+  const rem = E.legalMoves(st, 0).map((m) => m.cell).sort();
+  assert(rem.join() === "44,45", "one-eyed jack can take either rival's chip: " + rem);
+  // the AI blocks whichever rival is about to finish a line (Red here, not Green)
+  const s2 = E.newGame({ seats: 3, seed: 2 });
+  [21, 22, 23, 24].forEach((i) => (s2.chips[i] = 2)); s2.chips[20] = 1;
+  s2.hands[0] = [E.BOARD[25], "KS"];
+  assert(B.analyse(s2, 0, "normal")[0].move.cell === 25, "blocks the third player's four");
+}
+
 // fair play: the AI's choice must not depend on hidden information (other hands, deck order)
 let fairChecks = 0;
 for (let g = 0; g < 50; g++) {
@@ -159,4 +186,4 @@ if (globalThis.SeqMuse) {
     assert(c(ok) === ok, "clean line dropped: " + ok);
 }
 
-out(`PASS: no hidden-information use in ${fairChecks} AI decisions. Board, sequence and jack rules, ${wins}/40 brain games won (avg ${Math.round(moves / 40)} moves).`);
+out(`PASS: 3-player games (${threeWins}/40 finished, avg ${Math.round(threeMoves / 40)} moves), no hidden-information use in ${fairChecks} AI decisions. Board, sequence and jack rules, ${wins}/40 brain games won (avg ${Math.round(moves / 40)} moves).`);

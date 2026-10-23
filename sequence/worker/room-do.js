@@ -97,7 +97,8 @@ export class Room {
         const started = Date.now();
         const plan = core.aiPlan(rand);
         let pick = plan.pick, say = "", src = "brain";
-        if (!plan.quiet && llmConfigured(this.env)) {
+        // ask the model unless the move is obvious (a win to take or a four to block)
+        if (!plan.quiet && plan.ranked[0].score < 200 && llmConfigured(this.env)) {
           const ctrl = new AbortController();
           const timer = setTimeout(() => ctrl.abort(), LLM_TIMEOUT_MS);
           try {

@@ -7,7 +7,7 @@
 
   const AI_NAMES = ["Arya", "Kabir", "Meera", "Dev"];
   const AI_STYLE = [0, 1, 0.5, 0.5];
-  const TEAM = ["Blue", "Green"];
+  const TEAM = ["Blue", "Green", "Red"];
   const LEVELS = ["easy", "normal", "hard"];
   const TAKEOVER_MS = 60 * 1000;
   const AUTOSTART_MS = 20 * 1000; // quick match: start this long after the first player sits
@@ -67,7 +67,8 @@
             this.created = true; this.code = clean(msg.code, 8);
             if (msg.public) { // quick match room: anyone with the code joins, empty seats go to AI after a short wait
               this.public = true;
-              if (msg.mode === "1v1") { this.mode = "1v1"; this.seats = this.seats.slice(0, 2); }
+              const n = { "1v1": 2, "3p": 3 }[msg.mode];
+              if (n) { this.mode = msg.mode; this.seats = this.seats.slice(0, n); }
             }
           }
           if (!this.created) return fail("Room not found. Check the code or start a new room.");
@@ -90,7 +91,7 @@
         case "sit": {
           const i = Number(msg.seat);
           if (me >= 0) return fail("You already have a seat.");
-          if (this.phase !== "lobby") return fail("The game has already started.");
+          if (this.phase === "playing") return fail("The game has already started.");
           if (!(i >= 0 && i < this.seats.length) || this.seats[i].kind !== "empty") return fail("That seat is taken.");
           const s = this.seats[i];
           Object.assign(s, { kind: "human", name: clean(msg.name, 16) || "Player " + (i + 1), token: makeToken(rand), connected: true, awaySince: 0, takenOver: false });
@@ -102,7 +103,7 @@
           return out;
         }
         case "stand": {
-          if (me < 0 || this.phase !== "lobby") return fail("You can't leave your seat now.");
+          if (me < 0 || this.phase === "playing") return fail("You can't leave your seat now.");
           this.seats[me] = { kind: "empty", name: "", token: "", connected: false, awaySince: 0, takenOver: false };
           conn.seat = -1;
           out.reply = { t: "you", seat: -1, token: "" };
@@ -120,7 +121,7 @@
           if (!isHost) return fail("Only the host can do that.");
           if (!(i >= 0 && i < this.seats.length)) return fail("No such seat.");
           const s = this.seats[i];
-          if (this.phase === "lobby") {
+          if (this.phase !== "playing") { // lobby, or between games
             if (msg.on && s.kind === "empty") Object.assign(s, { kind: "ai", name: AI_NAMES[i], token: "", takenOver: false });
             else if (!msg.on && s.kind === "ai") Object.assign(s, { kind: "empty", name: "" });
             else return fail("Can't change that seat.");
@@ -136,14 +137,12 @@
         }
         case "mode": {
           if (!isHost || this.phase === "playing") return fail("Only the host can change the mode before the game.");
-          if (msg.mode !== "1v1" && msg.mode !== "2v2") return fail("Unknown mode.");
+          const want = { "1v1": 2, "3p": 3, "2v2": 4 }[msg.mode];
+          if (!want) return fail("Unknown mode.");
           if (msg.mode === this.mode) return out;
-          if (msg.mode === "1v1") {
-            if (this.seats.slice(2).some((s) => s.kind === "human")) return fail("Seats 3 and 4 have players. Ask them to leave their seats first.");
-            this.seats = this.seats.slice(0, 2);
-          } else {
-            for (let i = this.seats.length; i < 4; i++) this.seats.push({ kind: "empty", name: "", token: "", connected: false, awaySince: 0, takenOver: false });
-          }
+          if (this.seats.slice(want).some((s) => s.kind === "human")) return fail(`Seat${this.seats.length - want > 1 ? "s" : ""} ${want + 1}${this.seats.length - want > 1 ? " and up" : ""} ha${this.seats.length - want > 1 ? "ve" : "s"} a player. Ask them to leave their seat first.`);
+          this.seats = this.seats.slice(0, want);
+          for (let i = this.seats.length; i < want; i++) this.seats.push({ kind: "empty", name: "", token: "", connected: false, awaySince: 0, takenOver: false });
           this.mode = msg.mode;
           out.changed = true;
           return out;
@@ -162,7 +161,8 @@
           if (this.seats.some((s) => s.kind === "empty")) return fail("Fill every seat with a friend or an AI first.");
           this.state = E.newGame({ seats: this.seats.length, seed: Math.floor(rand() * 2 ** 31) });
           this.phase = "playing"; this.gameNo++; this.log = []; this.lastCell = -1; this.recent = []; this.lastText = ""; this.lastBanter = -9;
-          this.addLog({ k: "sys", text: `${this.teamNames(0)} (Blue) vs ${this.teamNames(1)} (Green). AI level: ${this.level}. First to 2 sequences wins.` });
+          const sides = this.state.sequences.map((q, t) => `${this.teamNames(t)} (${TEAM[t]})`).join(" vs ");
+          this.addLog({ k: "sys", text: `${sides}. AI level: ${this.level}. First to ${this.state.needed} sequence${this.state.needed > 1 ? "s" : ""} wins.` });
           const ais = this.seats.map((s, i) => i).filter((i) => this.seats[i].kind === "ai");
           if (ais.length) this.banter(ais[Math.floor(rand() * ais.length)], "start", null, rand);
           this.prelude();
@@ -217,7 +217,7 @@
       return !!this.handle(host, { t: "start" }, now, rand).changed;
     }
 
-    teamNames(t) { return this.seats.filter((s, i) => E.teamOf(i) === t).map((s) => s.name).join(" & "); }
+    teamNames(t) { return this.seats.filter((s, i) => E.teamOf(i, this.seats.length) === t).map((s) => s.name).join(" & "); }
 
     // start of a turn: swap a dead card, pass if nothing is playable, end the game when it's over
     prelude() {
@@ -236,10 +236,10 @@
       if (this.phase === "over") return;
       this.phase = "over";
       const t = this.state.winner;
-      this.addLog({ k: "big", text: this.state.draw ? "It's a draw" : `${TEAM[t]} team wins! (${this.teamNames(t)})` });
+      this.addLog({ k: "big", text: this.state.draw ? "It's a draw" : `${TEAM[t]}${this.seats.length === 4 ? " team" : ""} wins! (${this.teamNames(t)})` });
       if (t != null) {
-        const win = this.seats.map((s, i) => i).filter((i) => E.teamOf(i) === t && this.seats[i].kind === "ai");
-        const lose = this.seats.map((s, i) => i).filter((i) => E.teamOf(i) !== t && this.seats[i].kind === "ai");
+        const win = this.seats.map((s, i) => i).filter((i) => E.teamOf(i, this.seats.length) === t && this.seats[i].kind === "ai");
+        const lose = this.seats.map((s, i) => i).filter((i) => E.teamOf(i, this.seats.length) !== t && this.seats[i].kind === "ai");
         if (win.length) this.banter(win[0], "win", null, Math.random);
         if (lose.length) this.banter(lose[0], "lose", null, Math.random);
       }
@@ -257,8 +257,8 @@
       this.addLog(entry);
       this.lastText = "";
       if (res.made) {
-        this.addLog({ k: "big", text: `🎉 ${TEAM[res.team]} made a sequence! (${this.state.sequences[res.team].length}/2)` });
-        this.lastText = `🎉 ${TEAM[res.team]} made a sequence! (${this.state.sequences[res.team].length}/2)`;
+        this.lastText = `🎉 ${TEAM[res.team]} made a sequence! (${this.state.sequences[res.team].length}/${this.state.needed})`;
+        this.addLog({ k: "big", text: this.lastText });
       }
       return res;
     }
@@ -320,9 +320,9 @@
       const forced = ["start", "sequence", "theirSeq", "win", "lose"].includes(event);
       const moveNo = this.state ? this.state.moveNo : 0;
       if (!forced && moveNo - this.lastBanter < 3) return;
-      const rivals = this.seats.map((x, i) => i).filter((i) => E.teamOf(i) !== E.teamOf(seat));
-      const mate = this.seats.find((x, i) => i !== seat && E.teamOf(i) === E.teamOf(seat));
-      const opp = target != null && E.teamOf(target) !== E.teamOf(seat) ? target : rivals[Math.floor(rand() * rivals.length)];
+      const rivals = this.seats.map((x, i) => i).filter((i) => E.teamOf(i, this.seats.length) !== E.teamOf(seat, this.seats.length));
+      const mate = this.seats.find((x, i) => i !== seat && E.teamOf(i, this.seats.length) === E.teamOf(seat, this.seats.length));
+      const opp = target != null && E.teamOf(target, this.seats.length) !== E.teamOf(seat, this.seats.length) ? target : rivals[Math.floor(rand() * rivals.length)];
       const text = L.line(AI_NAMES[seat], event, { opp: this.seats[opp].name, mate: mate ? mate.name : "" }, rand);
       if (!text) return;
       this.addLog({ k: "say", seat, who: s.name, text });
@@ -332,7 +332,7 @@
       if (this.over()) return;
       const ev = res.made ? "theirSeq" : res.type === "remove" ? "hit" : /blocks opponents' 4/.test(pick.notes.join(" ")) ? "hit" : "";
       if (!ev) return;
-      const rivals = this.seats.map((x, i) => i).filter((i) => E.teamOf(i) !== E.teamOf(mover) && this.seats[i].kind === "ai" && !this.seats[i].takenOver);
+      const rivals = this.seats.map((x, i) => i).filter((i) => E.teamOf(i, this.seats.length) !== E.teamOf(mover, this.seats.length) && this.seats[i].kind === "ai" && !this.seats[i].takenOver);
       if (rivals.length) this.banter(rivals[Math.floor(rand() * rivals.length)], ev, mover, rand);
     }
 

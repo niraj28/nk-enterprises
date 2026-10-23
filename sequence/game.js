@@ -6,14 +6,16 @@
   const S = window.SeqSound || { play() {}, enabled: () => false, toggle: () => false };
   const $ = (id) => document.getElementById(id);
   const SUIT = { S: "♠", H: "♥", D: "♦", C: "♣" };
-  const TEAM = ["Blue", "Green"];
+  const TEAM = ["Blue", "Green", "Red"];
   const store = {
     get(k, d) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch (e) { return d; } },
     set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* private mode */ } }
   };
   const label = (c) => (c[0] === "T" ? "10" : c[0]) + SUIT[c[1]];
   const esc = (s) => String(s).replace(/[&<>"]/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[ch]));
-  const avatar = (p, i) => `<span class="avatar t${E.teamOf(i)}${p.mode === "muse" ? " ai" : ""}" aria-hidden="true">${esc((p.name || "?").trim()[0] || "?").toUpperCase()}</span>`;
+  const teamOf = (i) => E.teamOf(i, players.length || seatCount());
+  const teamWord = (n) => (n === 4 ? " team" : ""); // "Blue team" only when there are partners
+  const avatar = (p, i, n) => `<span class="avatar t${E.teamOf(i, n || players.length || seatCount())}${p.mode === "muse" ? " ai" : ""}" aria-hidden="true">${esc((p.name || "?").trim()[0] || "?").toUpperCase()}</span>`;
 
   // ---- Seats ----
   let seats = store.get("seq.seats", null);
@@ -21,12 +23,13 @@
     seats = M.PERSONAS.map((p, i) => ({ name: i === 0 ? "You" : p.name, mode: i === 0 ? "human" : "muse" }));
   }
 
-  let mode = store.get("seq.mode", "2v2") === "1v1" ? "1v1" : "2v2";
-  const seatCount = () => (mode === "1v1" ? 2 : 4);
+  const SEATS_FOR = { "1v1": 2, "3p": 3, "2v2": 4 };
+  let mode = SEATS_FOR[store.get("seq.mode", "2v2")] ? store.get("seq.mode", "2v2") : "2v2";
+  const seatCount = () => SEATS_FOR[mode];
   function renderMode() {
     document.querySelectorAll("#modes button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.v === mode)));
-    $("modeHint").textContent = mode === "1v1" ? "You against one opponent. 7 cards each, first to 2 sequences." : "Two teams of two. 6 cards each, first to 2 sequences.";
-    $("watchBtn").textContent = mode === "1v1" ? "👀 Watch 2 AI agents" : "👀 Watch 4 AI agents";
+    $("modeHint").textContent = { "1v1": "You against one opponent. 7 cards each, first to 2 sequences.", "3p": "Three players, everyone for themselves. 6 cards each, first to 1 sequence.", "2v2": "Two teams of two. 6 cards each, first to 2 sequences." }[mode];
+    $("watchBtn").textContent = `👀 Watch ${seatCount()} AI agents`;
   }
   document.querySelectorAll("#modes button").forEach((b) => b.addEventListener("click", () => {
     mode = b.dataset.v; store.set("seq.mode", mode); renderMode(); renderSeats();
@@ -38,7 +41,7 @@
       const p = M.PERSONAS[i], el = document.createElement("li");
       el.className = "seat";
       el.innerHTML =
-        avatar(s, i) +
+        avatar(s, i, seatCount()) +
         `<div class="who"><input aria-label="Seat ${i + 1} name" maxlength="16"><span class="persona"></span></div>` +
         `<div class="mode" role="group" aria-label="Seat ${i + 1} player">` +
         `<button type="button" data-m="muse">AI</button><button type="button" data-m="human">Human</button></div>`;
@@ -60,7 +63,7 @@
           renderSeats();
         });
       });
-      el.querySelector(".persona").textContent = `${TEAM[E.teamOf(i)]}${mode === "1v1" ? "" : " team"} · ` +
+      el.querySelector(".persona").textContent = `${TEAM[E.teamOf(i, seatCount())]}${teamWord(seatCount())} · ` +
         (s.mode === "muse" ? p.voice.replace(/^an? /, "") : "plays on this device");
       $("seats").appendChild(el);
     });
@@ -120,7 +123,7 @@
     $("feed").innerHTML = ""; $("bubble").hidden = true;
     showTable();
     if (gameDaily) log("sys", `Daily challenge #${P.dailyNo(gameDaily)}${dailyPractice ? " (practice: today's result is already saved)" : ""}. Same deal for everyone today, against the Hard AI. First to 2 sequences wins.`);
-    else log("sys", `${teamNames(0)} (Blue) vs ${teamNames(1)} (Green)${players.length === 2 ? ", 1 vs 1" : ""}. AI level: ${gameLevel}. First to 2 sequences wins.`);
+    else log("sys", `${state.sequences.map((q, t) => `${teamNames(t)} (${TEAM[t]})`).join(" vs ")}. AI level: ${gameLevel}. First to ${state.needed} sequence${state.needed > 1 ? "s" : ""} wins.`);
     if (humans() > 0 && !store.get("seq.tutorial", false)) { $("tutorial").hidden = false; $("tutBtn").focus(); }
     const ais = players.map((p, i) => i).filter((i) => players[i].mode === "muse");
     if (ais.length) { const my = token, sp = ais[Math.floor(Math.random() * ais.length)]; setTimeout(() => my === token && banter(sp, "start"), 500); }
@@ -137,7 +140,7 @@
     setPause(false);
     window.scrollTo(0, 0);
   }
-  const teamNames = (t) => players.filter((p, i) => E.teamOf(i) === t).map((p) => p.name).join(" & ");
+  const teamNames = (t) => players.filter((p, i) => teamOf(i) === t).map((p) => p.name).join(" & ");
 
   function exit() {
     if (online) {
@@ -212,7 +215,7 @@
     lastText = d.what + (d.note ? " · " + d.note : "");
     log("move", `<b>${esc(d.what)}</b>${d.note ? " · " + esc(d.note) : ""}` + (source ? `<span class="src">${source === "muse" ? "Gemini" : "brain"}</span>` : ""));
     if (res.made) {
-      const msg = `🎉 ${TEAM[res.team]} made a sequence! (${state.sequences[res.team].length}/2)`;
+      const msg = `🎉 ${TEAM[res.team]} made a sequence! (${state.sequences[res.team].length}/${state.needed})`;
       log("big", msg);
       lastText = msg;
     }
@@ -230,9 +233,9 @@
     return "idle";
   }
   function ctxFor(seat, target) {
-    const rivals = players.map((p, i) => i).filter((i) => E.teamOf(i) !== E.teamOf(seat));
-    const mate = players.find((p, i) => i !== seat && E.teamOf(i) === E.teamOf(seat));
-    const opp = target != null && E.teamOf(target) !== E.teamOf(seat) ? target : rivals[Math.floor(Math.random() * rivals.length)];
+    const rivals = players.map((p, i) => i).filter((i) => teamOf(i) !== teamOf(seat));
+    const mate = players.find((p, i) => i !== seat && teamOf(i) === teamOf(seat));
+    const opp = target != null && teamOf(target) !== teamOf(seat) ? target : rivals[Math.floor(Math.random() * rivals.length)];
     // the default human name "You" reads oddly when addressed, so use a nickname instead
     const call = (n, alt) => (/^you$/i.test(n) ? alt : n);
     return { opp: call(players[opp].name, "champ"), mate: mate ? call(mate.name, "partner") : "" };
@@ -253,7 +256,7 @@
     if (over()) return;
     const ev = res.made ? "theirSeq" : res.type === "remove" ? "hit" : /blocks opponents' 4/.test(pick.notes.join(" ")) ? "hit" : "";
     if (!ev) return;
-    const rivals = players.map((p, i) => i).filter((i) => E.teamOf(i) !== E.teamOf(mover) && players[i].mode === "muse");
+    const rivals = players.map((p, i) => i).filter((i) => teamOf(i) !== teamOf(mover) && players[i].mode === "muse");
     if (!rivals.length) return;
     const my = token, who = rivals[Math.floor(Math.random() * rivals.length)];
     setTimeout(() => my === token && !over() && banter(who, ev, mover), 700);
@@ -262,18 +265,18 @@
   function finish() {
     render();
     const t = state.winner, h = players.map((p, i) => (p.mode === "human" ? i : -1)).filter((i) => i >= 0);
-    const youWon = h.length === 1 && E.teamOf(h[0]) === t;
+    const youWon = h.length === 1 && teamOf(h[0]) === t;
     const youLost = h.length === 1 && t != null && !youWon;
-    $("winTitle").textContent = state.draw ? "It's a draw" : youWon ? "You win! 🎉" : youLost ? `${TEAM[t]} wins this time` : `${TEAM[t]} team wins!`;
-    $("winText").textContent = state.draw ? "The deck ran dry with no winner." : `${teamNames(t)} made 2 sequences in ${state.moveNo} moves.`;
+    $("winTitle").textContent = state.draw ? "It's a draw" : youWon ? "You win! 🎉" : youLost ? `${TEAM[t]} wins this time` : `${TEAM[t]}${teamWord(players.length)} wins!`;
+    $("winText").textContent = state.draw ? "The deck ran dry with no winner." : `${teamNames(t)} made ${state.needed} sequence${state.needed > 1 ? "s" : ""} in ${state.moveNo} moves.`;
     document.querySelector(".trophy").textContent = youLost ? "🤝" : "🏆";
     $("againBtn").disabled = false; $("againBtn").textContent = "Play again";
     S.play(youLost ? "lose" : "win");
     log("big", $("winTitle").textContent);
     try { localStorage.removeItem("seq.save"); } catch (e) { /* ignore */ }
     if (t != null) {
-      const winAi = players.map((p, i) => i).filter((i) => E.teamOf(i) === t && players[i].mode === "muse");
-      const loseAi = players.map((p, i) => i).filter((i) => E.teamOf(i) !== t && players[i].mode === "muse");
+      const winAi = players.map((p, i) => i).filter((i) => teamOf(i) === t && players[i].mode === "muse");
+      const loseAi = players.map((p, i) => i).filter((i) => teamOf(i) !== t && players[i].mode === "muse");
       if (winAi.length) banter(winAi[0], "win");
       const my = token;
       if (loseAi.length) setTimeout(() => my === token && banter(loseAi[0], "lose"), 900);
@@ -281,7 +284,7 @@
     $("winExtra").innerHTML = "";
     if (h.length === 1) {
       const result = state.draw ? "draw" : youWon ? "win" : "loss";
-      const rec = P.record({ result, mode: players.length === 2 ? "1v1" : "2v2", level: gameLevel, moves: state.moveNo, daily: gameDaily && !dailyPractice ? gameDaily : null });
+      const rec = P.record({ result, mode: players.length === 2 ? "1v1" : players.length === 3 ? "3p" : "2v2", level: gameLevel, moves: state.moveNo, daily: gameDaily && !dailyPractice ? gameDaily : null });
       showWinExtras(rec, result, state.moveNo);
       if (gameDaily) showDailyBoard(result);
       if (youWon) confetti();
@@ -305,10 +308,10 @@
 
   function showCover(seat) {
     const p = players[seat];
-    $("coverAvatar").className = "avatar big t" + E.teamOf(seat);
+    $("coverAvatar").className = "avatar big t" + teamOf(seat);
     $("coverAvatar").textContent = p.name[0].toUpperCase();
     $("coverTitle").textContent = `${p.name}'s turn`;
-    $("coverText").textContent = `Pass the phone to ${p.name} (${TEAM[E.teamOf(seat)]} team). Everyone else, no peeking!`;
+    $("coverText").textContent = `Pass the phone to ${p.name} (${TEAM[teamOf(seat)]}${teamWord(players.length)}). Everyone else, no peeking!`;
     $("cover").hidden = false;
     $("coverBtn").focus();
     S.play("turn");
@@ -407,11 +410,11 @@
       if (card !== "FREE") b.setAttribute("aria-label", `${E.cellName(i)} ${label(card)}${t !== -1 ? ", " + TEAM[t] + " chip" : ""}`);
     });
     flashCell = -1;
-    const seqNow = state.sequences[0].length + state.sequences[1].length;
+    const seqNow = state.sequences.reduce((n, q) => n + q.length, 0);
     if (seqNow > seqSeen) {
       // glow the line that was just completed
-      const newest = [...state.sequences[0], ...state.sequences[1]].slice(-1)[0] || [];
-      const ownTeam = viewerSeat() >= 0 && state.sequences[E.teamOf(viewerSeat())].some((q) => q === newest);
+      const newest = state.sequences.flat().slice(-1)[0] || []; // only one sequence lands per move, so the last added is new
+      const ownTeam = viewerSeat() >= 0 && state.sequences[teamOf(viewerSeat())].some((q) => q === newest);
       newest.forEach((i) => { cellEls[i].classList.remove("seqflash"); void cellEls[i].offsetWidth; cellEls[i].classList.add("seqflash"); });
       setTimeout(() => newest.forEach((i) => cellEls[i].classList.remove("seqflash")), 1700);
       if (ownTeam) buzz([30, 40, 30]);
@@ -419,6 +422,9 @@
     seqSeen = seqNow;
     $("scoreBlue").textContent = state.sequences[0].length;
     $("scoreGreen").textContent = state.sequences[1].length;
+    $("scoreRedWrap").hidden = state.sequences.length < 3;
+    if (state.sequences.length > 2) $("scoreRed").textContent = state.sequences[2].length;
+    document.querySelectorAll(".score .need").forEach((el) => { el.textContent = state.needed; });
 
     // banner: what to do now, plus what just happened
     const p = players[seat];
@@ -457,7 +463,7 @@
     $("players").innerHTML = players.map((pl, i) => {
       const now = i === seat && !over();
       let status = now ? (pl.mode === "muse" ? '<small class="dots">thinking</small>' : "<small>to play</small>")
-        : `<small>${me < 0 ? TEAM[E.teamOf(i)] : i === me ? "you" : E.teamOf(i) === E.teamOf(me) ? "partner" : "rival"}</small>`;
+        : `<small>${me < 0 ? TEAM[teamOf(i)] : i === me ? "you" : teamOf(i) === teamOf(me) ? "partner" : "rival"}</small>`;
       if (pl.away) {
         status = "<small>away</small>";
         const since = online && online.awaySeen[i];
@@ -520,7 +526,7 @@
     const s = loadSave();
     if (!s) return renderResume();
     state = s.state; gameLevel = s.level || "normal"; lastAllAi = !!s.lastAllAi;
-    gameDaily = s.gameDaily || null; dailyPractice = !!s.dailyPractice; dailyMoves = s.dailyMoves || []; seqSeen = state.sequences[0].length + state.sequences[1].length;
+    gameDaily = s.gameDaily || null; dailyPractice = !!s.dailyPractice; dailyMoves = s.dailyMoves || []; seqSeen = state.sequences.reduce((n, q) => n + q.length, 0);
     players = s.players.map((p, i) => ({ name: p.name, mode: p.mode, persona: M.PERSONAS[i] }));
     chat = s.chat || []; feedLog = s.feedLog || []; lastText = s.lastText || ""; recent = s.recent || []; lastCell = s.lastCell != null ? s.lastCell : -1;
     token++; selected = null; revealed = -1; paused = false; museWarned = false; lastBanter = state.moveNo;
@@ -693,10 +699,10 @@
   }
 
   function showOnlineWin(v) {
-    const t = state.winner, mine = v.you >= 0 ? E.teamOf(v.you) : -1;
+    const t = state.winner, mine = v.you >= 0 ? teamOf(v.you) : -1;
     const iHost = v.host === v.you && v.you >= 0;
-    $("winTitle").textContent = state.draw ? "It's a draw" : mine === t ? "You win! 🎉" : mine >= 0 ? `${TEAM[t]} wins this time` : `${TEAM[t]} team wins!`;
-    $("winText").textContent = state.draw ? "The deck ran dry with no winner." : `${teamNames(t)} made 2 sequences in ${state.moveNo} moves.`;
+    $("winTitle").textContent = state.draw ? "It's a draw" : mine === t ? "You win! 🎉" : mine >= 0 ? `${TEAM[t]} wins this time` : `${TEAM[t]}${teamWord(v.seats.length)} wins!`;
+    $("winText").textContent = state.draw ? "The deck ran dry with no winner." : `${teamNames(t)} made ${state.needed} sequence${state.needed > 1 ? "s" : ""} in ${state.moveNo} moves.`;
     document.querySelector(".trophy").textContent = mine >= 0 && mine !== t ? "🤝" : "🏆";
     $("againBtn").disabled = !iHost;
     S.play(mine >= 0 && mine !== t ? "lose" : "win");
@@ -704,7 +710,7 @@
     $("winExtra").innerHTML = "";
     if (mine >= 0) {
       const result = state.draw ? "draw" : mine === t ? "win" : "loss";
-      const rec = P.record({ result, mode: v.seats.length === 2 ? "1v1" : "2v2", level: v.level, moves: state.moveNo, online: true });
+      const rec = P.record({ result, mode: v.seats.length === 2 ? "1v1" : v.seats.length === 3 ? "3p" : "2v2", level: v.level, moves: state.moveNo, online: true });
       showWinExtras(rec, result, state.moveNo);
       if (result === "win") confetti();
     }
@@ -716,7 +722,7 @@
     const filled = v.seats.filter((s) => s.kind !== "empty").length, total = v.seats.length;
     const ol = $("lobbySeats");
     ol.innerHTML = v.seats.map((s, i) => {
-      const team = TEAM[E.teamOf(i)] + (v.seats.length === 2 ? "" : " team");
+      const team = TEAM[E.teamOf(i, v.seats.length)] + teamWord(v.seats.length);
       let name, sub, actions = "";
       if (s.kind === "empty") {
         name = "Empty seat"; sub = team;
@@ -730,7 +736,7 @@
         sub = `${team} · ${s.connected ? "online" : "away"}`;
         if (i === you) actions += `<button type="button" class="btn btn-line btn-small" data-stand="1">Leave seat</button>`;
       }
-      const av = s.kind === "empty" ? `<span class="avatar" aria-hidden="true">${i + 1}</span>` : avatar({ name: s.name, mode: s.kind === "ai" ? "muse" : "human" }, i);
+      const av = s.kind === "empty" ? `<span class="avatar" aria-hidden="true">${i + 1}</span>` : avatar({ name: s.name, mode: s.kind === "ai" ? "muse" : "human" }, i, v.seats.length);
       return `<li class="seat${s.kind === "empty" ? " empty" : ""}">${av}<div class="who"><b>${s.kind === "human" ? name : esc(name)}</b><span class="persona">${esc(sub)}</span></div><div class="seat-actions">${actions}</div></li>`;
     }).join("");
     document.querySelectorAll("#lobbyModes button").forEach((b) => {
@@ -759,7 +765,7 @@
       return;
     }
     $("lobbyStatus").textContent =
-      you < 0 ? (total === 2 ? "Type your name and pick a seat. Blue plays Green, 1 vs 1." : "Type your name and pick a seat. Blue (seats 1, 3) plays Green (seats 2, 4).")
+      you < 0 ? (total === 2 ? "Type your name and pick a seat. Blue plays Green, 1 vs 1." : total === 3 ? "Type your name and pick a seat. Three players, everyone for themselves." : "Type your name and pick a seat. Blue (seats 1, 3) plays Green (seats 2, 4).")
       : iHost ? (filled < total ? "Invite friends with the link, or tap + AI to fill empty seats. Then start." : "Everyone's seated. Start when ready!")
       : "Waiting for the host to start the game…";
   }
