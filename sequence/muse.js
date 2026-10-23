@@ -101,7 +101,7 @@
     const shortlist = ranked.slice(0, 8);
     const prompt = buildPrompt(state, seat, persona, players, shortlist, chat.slice(-6), level);
     const ctrl = new AbortController();
-    const timer = setTimeout(() => ctrl.abort(), 20000);
+    const timer = setTimeout(() => ctrl.abort(), 10000);
     try {
       const res = await fetch(url, {
         method: "POST",

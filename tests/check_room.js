@@ -177,6 +177,27 @@ if (globalThis.SeqMuse) {
   assert(q.log.filter((l) => l.k === "react").length === 1, "one reaction logged");
 }
 
+// online turn clock: 60 s per move, then the AI plays one move for the player
+{
+  const tc = new R.RoomCore(), p1 = { seat: -1 }, p2 = { seat: -1 };
+  tc.handle(p1, { t: "hello", create: true, code: "CLOCK" }, now, rand);
+  tc.handle(p2, { t: "hello" }, now, rand);
+  tc.handle(p1, { t: "sit", seat: 0, name: "Fast" }, now, rand);
+  tc.handle(p1, { t: "mode", mode: "1v1" }, now, rand);
+  tc.handle(p2, { t: "sit", seat: 1, name: "Slow" }, now, rand);
+  tc.handle(p1, { t: "start" }, now, rand);
+  assert(tc.view(0, now).turnEndsIn === R.TURN_MS, "clock starts with the turn");
+  assert(!tc.timeout(now + R.TURN_MS - 1, rand), "not before time");
+  const before = tc.state.moveNo;
+  assert(tc.timeout(now + R.TURN_MS, rand) && tc.state.moveNo === before + 1 && tc.state.turn === 1, "AI plays one move when time is up");
+  const last = tc.log.filter((l) => l.k === "move").pop();
+  assert(last.seat === 0 && last.src === "timeout" && tc.log.some((l) => /Time's up/.test(l.text || "")), "logged as an automatic move");
+  assert(tc.view(1, now + R.TURN_MS).turnEndsIn === R.TURN_MS, "next player's clock restarted");
+  const mv = E.legalMoves(tc.state, 1)[0];
+  tc.handle(p2, { t: "move", ...mv }, now + R.TURN_MS + 5000, rand);
+  assert(tc.turnEndsAt === now + R.TURN_MS + 5000 + R.TURN_MS, "a real move restarts the clock for the next player");
+}
+
 // chat and play again
 send(c, { t: "chat", text: "gg <script>" });
 assert(room.log[room.log.length - 1].text === "gg script", "chat sanitised");
@@ -184,4 +205,4 @@ assert(send(c, { t: "start" }).reply.t === "error", "only host restarts");
 send(a, { t: "start" });
 assert(room.phase === "playing" && room.gameNo === 2, "play again");
 
-out(`PASS: rooms (3 players, quick match auto-start, reactions, 1v1 and 2v2, create, seats, host, AI fill-in, takeover and return, ${steps} turns, private hands, save/restore, chat).`);
+out(`PASS: rooms (turn clock, 3 players, quick match auto-start, reactions, 1v1 and 2v2, create, seats, host, AI fill-in, takeover and return, ${steps} turns, private hands, save/restore, chat).`);

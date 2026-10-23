@@ -656,6 +656,8 @@
     players = v.seats.map((s, i) => ({ name: s.name || "Empty", mode: s.kind === "ai" ? "muse" : "human", persona: M.PERSONAS[i], away: s.kind === "human" && !s.connected }));
     if (g.moveNo !== prevMove && v.lastCell !== lastCell) flashCell = v.lastCell;
     lastCell = v.lastCell; recent = v.recent || [];
+    online.turnEnds = v.turnEndsIn ? Date.now() + v.turnEndsIn : 0;
+    tickClock();
     if (selected && (prevTurn !== g.turn || !g.hand.includes(selected))) selected = null;
     if (prevTurn !== -1 && prevTurn !== g.turn && g.turn === v.you && v.phase === "playing" && !(g.winner != null || g.draw)) setTimeout(() => { S.play("turn"); buzz(35); }, 350);
     if ($("table").hidden) { document.body.classList.remove("in-lobby"); $("lobby").hidden = true; showTable(); }
@@ -679,7 +681,7 @@
         const what = e.type === "remove"
           ? `${who} removed a ${TEAM[e.removedTeam]} chip at ${E.cellName(e.cell)} (${label(e.card)})`
           : `${who} played ${label(e.card)} on ${E.cellName(e.cell)}`;
-        const tag = e.src ? `<span class="src">${e.src === "llm" ? "Gemini" : "brain"}</span>` : "";
+        const tag = e.src ? `<span class="src">${e.src === "llm" ? "Gemini" : e.src === "timeout" ? "auto" : "brain"}</span>` : "";
         log("move", `<b>${esc(what)}</b>${e.note ? " · " + esc(e.note) : ""}${tag}`, true);
         latestMove = what + (e.note ? " · " + e.note : "");
         want(e.type === "remove" ? "remove" : "place");
@@ -810,6 +812,18 @@
     if (!O.validCode(code)) return toast("Room codes are 5 letters, like QWERT.");
     openRoom(code, false);
   });
+
+  // ---- Online turn clock (60 s, then the AI plays one move for that player) ----
+  function tickClock() {
+    const el = $("turnClock");
+    if (!online || !online.turnEnds || !state || over()) { el.hidden = true; return; }
+    const secs = Math.max(0, Math.ceil((online.turnEnds - Date.now()) / 1000));
+    el.hidden = false;
+    el.textContent = secs + "s";
+    el.classList.toggle("low", secs <= 10);
+    if (secs === 10 && myTurn() && online.warned !== online.turnEnds) { online.warned = online.turnEnds; S.play("turn"); buzz([20, 60, 20]); }
+  }
+  setInterval(tickClock, 1000);
 
   // ---- Reactions (online) ----
   function floatEmoji(seat, emoji) {

@@ -130,7 +130,9 @@
       if (c.deliver) c.deliver(m); else ch.postMessage({ down: true, to: id, msg: m });
     };
     const broadcast = () => { for (const [id, c] of conns) sendTo(id, core.view(c.seat)); };
-    setInterval(() => { if (core.autoStart(Date.now(), Math.random)) { broadcast(); runAI(); } }, 1000); // quick-match start
+    setInterval(() => { // quick-match start and the online turn clock
+      if (core.autoStart(Date.now(), Math.random) || core.timeout(Date.now(), Math.random)) { broadcast(); runAI(); }
+    }, 1000);
     async function runAI() {
       if (running) return;
       running = true;

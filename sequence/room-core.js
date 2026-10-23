@@ -10,7 +10,8 @@
   const TEAM = ["Blue", "Green", "Red"];
   const LEVELS = ["easy", "normal", "hard"];
   const TAKEOVER_MS = 60 * 1000;
-  const AUTOSTART_MS = 20 * 1000; // quick match: start this long after the first player sits
+  const AUTOSTART_MS = 20 * 1000;
+  const TURN_MS = 60 * 1000; // online: after this the AI plays one move for a player who is taking too long // quick match: start this long after the first player sits
   const REACTIONS = ["👏", "😂", "😮", "🔥", "😅", "🙏"];
   const SUIT = { S: "♠", H: "♥", D: "♦", C: "♣" };
   const label = (c) => (c[0] === "T" ? "10" : c[0]) + SUIT[c[1]];
@@ -26,14 +27,14 @@
   class RoomCore {
     constructor(data) {
       Object.assign(this, {
-        created: false, code: "", phase: "lobby", level: "normal", mode: "2v2", creator: -1, public: false, autoStartAt: 0, lastReact: {},
+        created: false, code: "", phase: "lobby", level: "normal", mode: "2v2", creator: -1, public: false, autoStartAt: 0, lastReact: {}, turnEndsAt: 0,
         seats: [0, 1, 2, 3].map(() => ({ kind: "empty", name: "", token: "", connected: false, awaySince: 0, takenOver: false })),
         state: null, log: [], logId: 0, gameNo: 0, lastCell: -1, recent: [], lastText: "", lastBanter: -9, lastActive: 0
       }, data || {});
     }
     toJSON() {
-      const { created, code, phase, level, mode, creator, public: pub, autoStartAt, lastReact, seats, state, log, logId, gameNo, lastCell, recent, lastText, lastBanter, lastActive } = this;
-      return { created, code, phase, level, mode, creator, public: pub, autoStartAt, lastReact, seats, state, log, logId, gameNo, lastCell, recent, lastText, lastBanter, lastActive };
+      const { created, code, phase, level, mode, creator, public: pub, autoStartAt, lastReact, turnEndsAt, seats, state, log, logId, gameNo, lastCell, recent, lastText, lastBanter, lastActive } = this;
+      return { created, code, phase, level, mode, creator, public: pub, autoStartAt, lastReact, turnEndsAt, seats, state, log, logId, gameNo, lastCell, recent, lastText, lastBanter, lastActive };
     }
 
     // ---- who is who ----
@@ -165,7 +166,7 @@
           this.addLog({ k: "sys", text: `${sides}. AI level: ${this.level}. First to ${this.state.needed} sequence${this.state.needed > 1 ? "s" : ""} wins.` });
           const ais = this.seats.map((s, i) => i).filter((i) => this.seats[i].kind === "ai");
           if (ais.length) this.banter(ais[Math.floor(rand() * ais.length)], "start", null, rand);
-          this.prelude();
+          this.prelude(now);
           out.changed = true;
           return out;
         }
@@ -178,7 +179,7 @@
           const pick = B.scoreMove(this.state, me, legal, this.level);
           const res = this.play(me, pick);
           this.react(me, pick, res, rand);
-          this.prelude();
+          this.prelude(now);
           out.changed = true;
           return out;
         }
@@ -209,6 +210,20 @@
     fillWithAI() {
       this.seats.forEach((s, i) => { if (s.kind === "empty") Object.assign(s, { kind: "ai", name: AI_NAMES[i], token: "", takenOver: false }); });
     }
+    // online turn clock: when a player runs out of time, the AI plays one move for them
+    timeout(now, rand) {
+      if (this.phase !== "playing" || this.over() || !this.turnEndsAt || now < this.turnEndsAt) return false;
+      const seat = this.state.turn;
+      if (this.seats[seat].kind !== "human") return false;
+      const ranked = B.analyse(this.state, seat, "normal");
+      if (!ranked.length) return false;
+      this.addLog({ k: "sys", text: `Time's up: the AI played for ${this.seats[seat].name}.` });
+      const pick = B.pick(ranked, 0, rand, "normal");
+      const res = this.play(seat, pick, "timeout");
+      this.react(seat, pick, res, rand);
+      this.prelude(now);
+      return true;
+    }
     // quick match: when the wait is over, fill empty seats with AI and start
     autoStart(now, rand) {
       if (!this.public || this.phase !== "lobby" || !this.autoStartAt || now < this.autoStartAt) return false;
@@ -220,13 +235,17 @@
     teamNames(t) { return this.seats.filter((s, i) => E.teamOf(i, this.seats.length) === t).map((s) => s.name).join(" & "); }
 
     // start of a turn: swap a dead card, pass if nothing is playable, end the game when it's over
-    prelude() {
+    prelude(now) {
+      this.turnEndsAt = 0;
       for (let guard = 0; guard < 8; guard++) {
         if (this.over()) { this.finish(); return; }
         const seat = this.state.turn, s = this.seats[seat];
         const swapped = E.tradeDeadCard(this.state, seat);
         if (swapped) this.addLog({ k: "sys", text: `${s.name} swapped a dead card.` });
-        if (E.legalMoves(this.state, seat).length) return;
+        if (E.legalMoves(this.state, seat).length) {
+          if (s.kind === "human") this.turnEndsAt = (now || Date.now()) + TURN_MS; // start this player's clock
+          return;
+        }
         this.addLog({ k: "sys", text: `${s.name} has no playable card and passes.` });
         E.pass(this.state, seat);
       }
@@ -341,6 +360,7 @@
       const st = this.state;
       return {
         t: "room", code: this.code, phase: this.phase, level: this.level, mode: this.mode, host: this.hostSeat(), you: seat, gameNo: this.gameNo,
+        turnEndsIn: this.phase === "playing" && this.turnEndsAt ? Math.max(0, this.turnEndsAt - (now || Date.now())) : 0,
         public: this.public, startsIn: this.public && this.phase === "lobby" && this.autoStartAt ? Math.max(0, this.autoStartAt - (now || Date.now())) : 0,
         seats: this.seats.map((s) => ({ kind: s.kind, name: s.name, connected: s.kind !== "human" || s.connected, awaySince: s.awaySince, takenOver: !!s.takenOver })),
         game: st ? {
@@ -355,7 +375,7 @@
     }
   }
 
-  const api = { RoomCore, TAKEOVER_MS, AUTOSTART_MS, REACTIONS, label };
+  const api = { RoomCore, TAKEOVER_MS, AUTOSTART_MS, TURN_MS, REACTIONS, label };
   root.SeqRoom = api;
   if (typeof module !== "undefined" && module.exports) module.exports = api;
 })(typeof window !== "undefined" ? window : globalThis);
