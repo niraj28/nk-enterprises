@@ -29,3 +29,16 @@ class_name = "Room"
 [[migrations]]
 tag = "v1"
 new_sqlite_classes = ["Room"]
+
+# Daily challenge leaderboard (one object per day) and quick-match queue
+[[durable_objects.bindings]]
+name = "BOARDS"
+class_name = "Board"
+
+[[durable_objects.bindings]]
+name = "MATCH"
+class_name = "Matchmaker"
+
+[[migrations]]
+tag = "v2"
+new_sqlite_classes = ["Board", "Matchmaker"]

@@ -34,7 +34,27 @@
     return c;
   }
 
-  // opts: { create, onMessage(msg), onStatus("connecting" | "online" | "offline") }
+  // quick match: the server hands out the code of a public room that's filling up
+  async function quickMatch(mode) {
+    const s = serverUrl();
+    if (!s) return { code: await newCode(), local: true };
+    const r = await fetch(s + "/match", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ mode }) });
+    if (!r.ok) throw new Error("Couldn't find a match right now (" + r.status + ").");
+    return r.json();
+  }
+  // daily leaderboard (null when there's no server)
+  async function dailyBoard(day, submission) {
+    const s = serverUrl();
+    if (!s) return null;
+    const r = await fetch(s + "/daily?day=" + encodeURIComponent(day), submission
+      ? { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(submission) }
+      : {});
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(data.error || "Leaderboard unavailable (" + r.status + ").");
+    return data;
+  }
+
+  // opts: { create, hello: extra fields for the first message, onMessage(msg), onStatus("connecting" | "online" | "offline") }
   function connect(code, opts) {
     return serverUrl() ? wsTransport(code, opts) : devTransport(code, opts);
   }
@@ -51,7 +71,7 @@
       ws.onopen = () => {
         tries = 0;
         opts.onStatus("online");
-        ws.send(JSON.stringify({ t: "hello", code, create, token: getToken(code) }));
+        ws.send(JSON.stringify(Object.assign({ t: "hello", code, create, token: getToken(code) }, opts.hello || {})));
         create = false;
       };
       ws.onmessage = (e) => { let m; try { m = JSON.parse(e.data); } catch (x) { return; } opts.onMessage(m); };
@@ -93,7 +113,7 @@
     }
     window.addEventListener("pagehide", () => t.close());
     opts.onStatus("online");
-    setTimeout(() => t.send({ t: "hello", code, create: !!opts.create, token: getToken(code) }), 0);
+    setTimeout(() => t.send(Object.assign({ t: "hello", code, create: !!opts.create, token: getToken(code) }, opts.hello || {})), 0);
     return t;
   }
 
@@ -110,6 +130,7 @@
       if (c.deliver) c.deliver(m); else ch.postMessage({ down: true, to: id, msg: m });
     };
     const broadcast = () => { for (const [id, c] of conns) sendTo(id, core.view(c.seat)); };
+    setInterval(() => { if (core.autoStart(Date.now(), Math.random)) { broadcast(); runAI(); } }, 1000); // quick-match start
     async function runAI() {
       if (running) return;
       running = true;
@@ -146,5 +167,5 @@
     return api;
   }
 
-  root.SeqOnline = { available, isDev, serverUrl, newCode, connect, getToken, setToken, validCode };
+  root.SeqOnline = { available, isDev, serverUrl, newCode, quickMatch, dailyBoard, connect, getToken, setToken, validCode };
 })(window);

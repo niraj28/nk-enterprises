@@ -2,7 +2,7 @@
 (function () {
   "use strict";
   const E = window.SeqEngine, B = window.SeqBrain, M = window.SeqMuse, L = window.SeqLines, O = window.SeqOnline;
-  const P = window.SeqProgress;
+  const P = window.SeqProgress, D = window.SeqDaily;
   const S = window.SeqSound || { play() {}, enabled: () => false, toggle: () => false };
   const $ = (id) => document.getElementById(id);
   const SUIT = { S: "♠", H: "♥", D: "♦", C: "♣" };
@@ -92,7 +92,7 @@
   let state = null, players = [], token = 0, selected = null, revealed = -1, lastCell = -1, flashCell = -1, recent = [];
   let paused = false, chat = [], museWarned = false, lastAllAi = false, lastText = "", bubbleTimer = 0;
   let feedLog = [], lastBanter = -9, gameLevel = "normal";
-  let gameDaily = null, dailyPractice = false, seqSeen = 0; // daily challenge date, replay flag, sequences already highlighted
+  let gameDaily = null, dailyPractice = false, seqSeen = 0, dailyMoves = []; // daily challenge date, replay flag, sequences already highlighted
   let online = null; // { code, conn, you, view, status, gameNo, logShown, awaySeen, winShown }
   const humans = () => players.filter((p) => p.mode === "human").length;
   const over = () => state.winner != null || state.draw;
@@ -105,7 +105,7 @@
       // the daily challenge: the same deal for everyone, you against the Hard brain (no Gemini, so it's fair)
       const me = seats[0].mode === "human" ? seats[0].name : "You";
       players = [{ name: me, mode: "human", persona: M.PERSONAS[0] }, { name: "Arya", mode: "muse", persona: M.PERSONAS[0] }];
-      state = E.newGame({ seats: 2, seed: P.dailySeed(gameDaily) });
+      state = D.newGame(gameDaily);
       gameLevel = "hard";
     } else {
       const cfg = (allAi ? M.PERSONAS.map((p) => ({ name: p.name, mode: "muse" })) : seats).slice(0, seatCount());
@@ -114,7 +114,7 @@
       state = E.newGame({ seats: players.length });
       gameLevel = level;
     }
-    seqSeen = 0;
+    seqSeen = 0; dailyMoves = [];
     token++; selected = null; revealed = -1; lastCell = -1; recent = []; paused = false; chat = []; museWarned = false; lastText = "";
     feedLog = []; lastBanter = -9;
     $("feed").innerHTML = ""; $("bubble").hidden = true;
@@ -133,6 +133,7 @@
     $("chatForm").hidden = online ? false : humans() === 0;
     $("pauseBtn").hidden = !!online || humans() > 0;
     $("speed").parentElement.hidden = !!online;
+    $("reactions").hidden = !online || online.you < 0;
     setPause(false);
     window.scrollTo(0, 0);
   }
@@ -178,7 +179,7 @@
   async function aiTurn(seat, my) {
     const p = players[seat], started = Date.now();
     const out = gameDaily
-      ? { pick: B.pick(B.analyse(state, seat, "hard"), 0, Math.random, "hard"), say: "", source: "brain" }
+      ? { pick: B.scoreMove(state, seat, D.aiMove(state, seat), "hard"), say: "", source: "brain" }
       : await M.choose(state, seat, p.persona, players, chat, gameLevel);
     const wait = Math.max(0, Number($("speed").value) - (Date.now() - started));
     await new Promise((r) => setTimeout(r, wait));
@@ -282,6 +283,7 @@
       const result = state.draw ? "draw" : youWon ? "win" : "loss";
       const rec = P.record({ result, mode: players.length === 2 ? "1v1" : "2v2", level: gameLevel, moves: state.moveNo, daily: gameDaily && !dailyPractice ? gameDaily : null });
       showWinExtras(rec, result, state.moveNo);
+      if (gameDaily) showDailyBoard(result);
       if (youWon) confetti();
     }
     $("againBtn").textContent = gameDaily ? "Play a normal game" : "Play again";
@@ -347,6 +349,7 @@
       return;
     }
     const pick = B.scoreMove(state, seat, move);
+    if (gameDaily) dailyMoves.push({ type: move.type, card: move.card, cell: move.cell }); // replayed by the leaderboard
     const res = play(seat, pick, null);
     react(seat, pick, res);
     selected = null;
@@ -498,7 +501,7 @@
   function save() {
     if (!state || over()) return;
     store.set("seq.save", {
-      v: 1, state, level: gameLevel, lastAllAi, chat, feedLog, lastText, recent, lastCell, gameDaily, dailyPractice,
+      v: 1, state, level: gameLevel, lastAllAi, chat, feedLog, lastText, recent, lastCell, gameDaily, dailyPractice, dailyMoves,
       players: players.map((p) => ({ name: p.name, mode: p.mode }))
     });
   }
@@ -517,7 +520,7 @@
     const s = loadSave();
     if (!s) return renderResume();
     state = s.state; gameLevel = s.level || "normal"; lastAllAi = !!s.lastAllAi;
-    gameDaily = s.gameDaily || null; dailyPractice = !!s.dailyPractice; seqSeen = state.sequences[0].length + state.sequences[1].length;
+    gameDaily = s.gameDaily || null; dailyPractice = !!s.dailyPractice; dailyMoves = s.dailyMoves || []; seqSeen = state.sequences[0].length + state.sequences[1].length;
     players = s.players.map((p, i) => ({ name: p.name, mode: p.mode, persona: M.PERSONAS[i] }));
     chat = s.chat || []; feedLog = s.feedLog || []; lastText = s.lastText || ""; recent = s.recent || []; lastCell = s.lastCell != null ? s.lastCell : -1;
     token++; selected = null; revealed = -1; paused = false; museWarned = false; lastBanter = state.moveNo;
@@ -551,10 +554,22 @@
     }
   }
 
-  function openRoom(code, create) {
+  async function quickMatch() {
+    try {
+      $("quickBtn").disabled = true;
+      const m = await O.quickMatch(mode);
+      openRoom(m.code, true, { public: true, mode });
+    } catch (e) {
+      toast(e.message || "Couldn't find a match. Try again.");
+    } finally {
+      $("quickBtn").disabled = false;
+    }
+  }
+
+  function openRoom(code, create, extra) {
     if (online) online.conn.close();
     token++; state = null;
-    online = { code, you: -1, view: null, status: "connecting", gameNo: -1, logShown: 0, awaySeen: {}, winShown: -1 };
+    online = { code, you: -1, view: null, status: "connecting", gameNo: -1, logShown: 0, awaySeen: {}, winShown: -1, autoSit: !!(extra && extra.public) };
     history.replaceState(null, "", "?room=" + code);
     document.body.classList.add("in-lobby");
     document.body.classList.remove("playing");
@@ -565,7 +580,7 @@
     $("lobbyStatus").textContent = "Connecting…";
     const text = `Join my Sequence game! Room ${code}: ${roomLink(code)}`;
     $("shareWa").href = "https://wa.me/?text=" + encodeURIComponent(text);
-    online.conn = O.connect(code, { create, onMessage, onStatus });
+    online.conn = O.connect(code, { create, hello: extra || null, onMessage, onStatus });
   }
 
   function leaveRoom() {
@@ -607,6 +622,16 @@
   }
 
   function applyView(v) {
+    // quick match: take the first free seat straight away
+    if (online.autoSit && v.you < 0 && v.phase === "lobby") {
+      const free = v.seats.findIndex((s) => s.kind === "empty");
+      if (free >= 0) {
+        online.autoSit = false;
+        const name = myName() || "Guest " + (100 + Math.floor(Math.random() * 900));
+        store.set("seq.name", name);
+        online.conn.send({ t: "sit", seat: free, name });
+      }
+    }
     v.seats.forEach((s, i) => {
       if (s.kind === "human" && !s.connected) { if (!online.awaySeen[i]) online.awaySeen[i] = Date.now(); }
       else delete online.awaySeen[i];
@@ -621,7 +646,7 @@
     const g = v.game, hands = v.seats.map(() => []);
     if (v.you >= 0) hands[v.you] = g.hand;
     const prevTurn = state ? state.turn : -1, prevMove = state ? state.moveNo : -1;
-    state = { chips: g.chips, seqCells: g.seqCells, sequences: g.sequences, turn: g.turn, moveNo: g.moveNo, winner: g.winner, draw: g.draw, needed: g.needed, hands, deck: { length: g.deckCount }, seats: 4 };
+    state = { chips: g.chips, seqCells: g.seqCells, sequences: g.sequences, turn: g.turn, moveNo: g.moveNo, winner: g.winner, draw: g.draw, needed: g.needed, hands, deck: { length: g.deckCount }, seats: v.seats.length };
     players = v.seats.map((s, i) => ({ name: s.name || "Empty", mode: s.kind === "ai" ? "muse" : "human", persona: M.PERSONAS[i], away: s.kind === "human" && !s.connected }));
     if (g.moveNo !== prevMove && v.lastCell !== lastCell) flashCell = v.lastCell;
     lastCell = v.lastCell; recent = v.recent || [];
@@ -652,6 +677,8 @@
         log("move", `<b>${esc(what)}</b>${e.note ? " · " + esc(e.note) : ""}${tag}`, true);
         latestMove = what + (e.note ? " · " + e.note : "");
         want(e.type === "remove" ? "remove" : "place");
+      } else if (e.k === "react") {
+        if (!first) { floatEmoji(e.seat, e.emoji); if (!sfx) S.play("chat"); }
       } else if (e.k === "say") {
         log("say", `<b>${esc(e.who)}:</b> ${esc(e.text)}`, true);
         if (!first) { showBubble(e.seat, e.who, e.text); if (!sfx) S.play("chat"); }
@@ -716,7 +743,21 @@
     });
     const start = $("lobbyStart");
     start.hidden = !iHost;
-    start.disabled = filled < total;
+    start.disabled = filled < total && !v.public;
+    start.textContent = v.public ? "▶ Start now" : "▶ Start game";
+    $("lobbyTitle").textContent = v.public ? "⚡ Quick match" : "Online room";
+    clearInterval(online.countdown);
+    if (v.public) {
+      const ends = Date.now() + (v.startsIn || 0);
+      const tick = () => {
+        const secs = Math.max(0, Math.ceil((ends - Date.now()) / 1000));
+        $("lobbyStatus").textContent = !v.startsIn ? "Finding players…"
+          : secs > 0 ? `Finding players… starting in ${secs}s. Empty seats get AI players.` : "Starting…";
+      };
+      tick();
+      online.countdown = setInterval(tick, 1000);
+      return;
+    }
     $("lobbyStatus").textContent =
       you < 0 ? (total === 2 ? "Type your name and pick a seat. Blue plays Green, 1 vs 1." : "Type your name and pick a seat. Blue (seats 1, 3) plays Green (seats 2, 4).")
       : iHost ? (filled < total ? "Invite friends with the link, or tap + AI to fill empty seats. Then start." : "Everyone's seated. Start when ready!")
@@ -762,6 +803,91 @@
     const code = $("joinCode").value.trim().toUpperCase();
     if (!O.validCode(code)) return toast("Room codes are 5 letters, like QWERT.");
     openRoom(code, false);
+  });
+
+  // ---- Reactions (online) ----
+  function floatEmoji(seat, emoji) {
+    const li = $("players").children[seat];
+    if (!li) return;
+    const r = li.getBoundingClientRect(), el = document.createElement("span");
+    el.className = "float-emoji";
+    el.textContent = emoji;
+    el.style.left = r.left + r.width / 2 + "px";
+    el.style.top = r.top + window.scrollY + "px";
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 1800);
+  }
+  $("reactions").addEventListener("click", (e) => {
+    const b = e.target.closest("button[data-emoji]");
+    if (b && online) online.conn.send({ t: "react", emoji: b.dataset.emoji });
+  });
+
+  // ---- Daily leaderboard (server replays the moves before recording anything) ----
+  function boardHtml(data, mineRank) {
+    if (!data || !data.top || !data.top.length) return "<p class=\"lb-empty\">No results yet today. Be the first!</p>";
+    return `<ol class="lb">${data.top.map((r, i) => `<li class="${i + 1 === mineRank ? "me" : ""}"><span>${i + 1}</span><b>${esc(r.name)}</b><em>${r.result === "win" ? "won in " + r.moves : r.result === "draw" ? "draw" : "lost"}</em></li>`).join("")}</ol>` +
+      `<p class="lb-note">${data.total} player${data.total === 1 ? "" : "s"} today${mineRank ? ` · you're #${mineRank}` : ""}</p>`;
+  }
+  async function showDailyBoard(result) {
+    if (!O || !O.serverUrl()) return;
+    const box = document.createElement("div");
+    box.className = "lb-box";
+    box.innerHTML = `<h3>Today's leaderboard</h3><div class="lb-body">Loading…</div>`;
+    $("winExtra").prepend(box);
+    const body = box.querySelector(".lb-body");
+    const posted = store.get("seq.dailyPosted", "") === gameDaily;
+    if (!dailyPractice && !posted) {
+      // posting needs the player's OK and a name, so it's a button, not automatic
+      const form = document.createElement("form");
+      form.className = "lb-form";
+      form.innerHTML = `<input maxlength="16" placeholder="Your name" aria-label="Name for the leaderboard"><button class="btn btn-blue btn-small" type="submit">Post my result</button>`;
+      form.querySelector("input").value = myName() && !/^you$/i.test(myName()) ? myName() : "";
+      box.insertBefore(form, body);
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const name = form.querySelector("input").value.trim();
+        if (!name) return form.querySelector("input").focus();
+        store.set("seq.name", name);
+        form.querySelector("button").disabled = true;
+        try {
+          const data = await O.dailyBoard(gameDaily, { player: P.playerId(), name, moves: dailyMoves });
+          store.set("seq.dailyPosted", gameDaily);
+          form.remove();
+          body.innerHTML = boardHtml(data, data.rank);
+        } catch (err) {
+          form.querySelector("button").disabled = false;
+          toast(err.message);
+        }
+      });
+    }
+    try { body.innerHTML = boardHtml(await O.dailyBoard(gameDaily)); } catch (e) { body.textContent = "Leaderboard unavailable right now."; }
+  }
+  async function renderDailyBest() {
+    if (!O || !O.serverUrl()) return;
+    try {
+      const data = await O.dailyBoard(P.today());
+      const best = data && data.top && data.top.find((r) => r.result === "win");
+      $("dailyBest").textContent = best ? `Today's best: ${best.name}, won in ${best.moves} moves · ${data.total} playing` : data && data.total ? `${data.total} playing today` : "";
+    } catch (e) { /* offline */ }
+  }
+
+  // ---- Keyboard play: 1-7 pick a card, arrow keys move around the board, Enter plays ----
+  document.addEventListener("keydown", (e) => {
+    const t = e.target instanceof Element ? e.target : null;
+    if (!state || $("table").hidden || (t && t.closest("input, textarea, select")) || e.metaKey || e.ctrlKey || e.altKey) return;
+    if (/^[1-7]$/.test(e.key) && myTurn()) {
+      const b = $("hand").querySelectorAll(".card")[Number(e.key) - 1];
+      if (b) { b.click(); const first = $("board").querySelector(".cell.legal"); if (first && selected) first.focus(); e.preventDefault(); }
+      return;
+    }
+    const cell = t && t.closest("#board .cell");
+    const step = { ArrowLeft: -1, ArrowRight: 1, ArrowUp: -10, ArrowDown: 10 }[e.key];
+    if (cell && step) {
+      const i = Number(cell.dataset.i), j = i + step;
+      if (j < 0 || j > 99 || (Math.abs(step) === 1 && Math.floor(j / 10) !== Math.floor(i / 10))) return;
+      cellEls[j].focus();
+      e.preventDefault();
+    }
   });
 
   // ---- Progress: record card, badges, sharing, confetti, vibration ----
@@ -814,6 +940,7 @@
 
   $("tutBtn").addEventListener("click", () => { store.set("seq.tutorial", true); $("tutorial").hidden = true; });
   $("dailyBtn").addEventListener("click", () => start(false, true));
+  $("quickBtn").addEventListener("click", quickMatch);
 
   function renderSound() {
     const on = S.enabled();
@@ -851,6 +978,7 @@
   renderResume();
   renderSound();
   renderRecord();
+  renderDailyBest();
 
   // ---- Install as an app (PWA) and offline play ----
   if ("serviceWorker" in navigator && (location.protocol === "https:" || O.isDev())) {
@@ -875,7 +1003,7 @@
     $("installRow").hidden = false; $("installBtn").hidden = true;
     $("installHint").textContent = "📲 Play it like an app: tap Share, then “Add to Home Screen”.";
   }
-  if (O && O.available()) { $("onlineBtn").hidden = false; $("joinForm").hidden = false; }
+  if (O && O.available()) { $("onlineBtn").hidden = false; $("quickBtn").hidden = false; $("joinForm").hidden = false; }
   const roomParam = (new URLSearchParams(location.search).get("room") || "").toUpperCase();
   if (O && O.available() && O.validCode(roomParam)) openRoom(roomParam, false);
   else if (new URLSearchParams(location.search).has("daily")) { history.replaceState(null, "", location.pathname); start(false, true); }

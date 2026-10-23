@@ -2,8 +2,12 @@
 //   POST /              -> Muse proxy (AI moves and table talk)
 //   POST /room/new      -> a fresh 5-letter room code
 //   GET  /room/CODE/ws  -> WebSocket into that room's Durable Object
+//   POST /match         -> quick match: the code of a room that's filling up
+//   GET  /daily?day=    -> daily challenge leaderboard; POST verifies and records a game
 import { handleMuse } from "./muse-proxy.js";
 export { Room } from "./room-do.js";
+export { Board } from "./board-do.js";
+export { Matchmaker } from "./match-do.js";
 
 const CODE_ABC = "ABCDEFGHJKLMNPQRSTUVWXYZ"; // no I or O
 const CODE_RE = /^\/room\/([A-HJ-NP-Z]{5})\/ws$/;
@@ -32,6 +36,13 @@ export default {
       return stub.fetch(request);
     }
 
+    // daily leaderboard: reading is free, posting is rate-limited below
+    if (url.pathname === "/daily" && request.method === "GET") {
+      const day = url.searchParams.get("day") || "";
+      const res = await env.BOARDS.get(env.BOARDS.idFromName("daily-" + day)).fetch(request);
+      return new Response(res.body, { status: res.status, headers: { ...cors, "Content-Type": "application/json" } });
+    }
+
     if (request.method !== "POST") return reply({ error: "POST only" }, 405);
     if (env.RATE_LIMITER) {
       const ip = request.headers.get("CF-Connecting-IP") || "anon";
@@ -39,6 +50,15 @@ export default {
       if (!success) return reply({ error: "slow down" }, 429);
     }
 
+    if (url.pathname === "/daily") {
+      const day = url.searchParams.get("day") || "";
+      const res = await env.BOARDS.get(env.BOARDS.idFromName("daily-" + day)).fetch(request);
+      return new Response(res.body, { status: res.status, headers: { ...cors, "Content-Type": "application/json" } });
+    }
+    if (url.pathname === "/match") {
+      const res = await env.MATCH.get(env.MATCH.idFromName("global")).fetch(request);
+      return new Response(res.body, { status: res.status, headers: { ...cors, "Content-Type": "application/json" } });
+    }
     if (url.pathname === "/room/new") {
       const bytes = crypto.getRandomValues(new Uint8Array(5));
       const code = Array.from(bytes, (b) => CODE_ABC[b % CODE_ABC.length]).join("");

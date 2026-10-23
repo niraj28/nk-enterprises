@@ -1,9 +1,9 @@
 /* Offline support for the Sequence game. Pages and scripts always come from the network when
    it's available (so updates show up at once) and from this cache when it isn't, so local games
    against the AI keep working offline. Online rooms and Gemini need a connection anyway. */
-const CACHE = "sequence-v1";
+const CACHE = "sequence-v2";
 const CORE = [
-  "./", "game.css", "engine.js", "brain.js", "lines.js", "muse.js", "sound.js", "progress.js",
+  "./", "game.css", "engine.js", "brain.js", "lines.js", "muse.js", "sound.js", "daily.js", "progress.js",
   "room-core.js", "online.js", "game.js", "manifest.webmanifest",
   "icons/icon-192.png", "icons/icon-512.png", "icons/apple-touch-icon.png",
   "../assets/style.css", "../assets/navigation.css", "../assets/lic-logo.png"

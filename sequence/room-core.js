@@ -10,6 +10,8 @@
   const TEAM = ["Blue", "Green"];
   const LEVELS = ["easy", "normal", "hard"];
   const TAKEOVER_MS = 60 * 1000;
+  const AUTOSTART_MS = 20 * 1000; // quick match: start this long after the first player sits
+  const REACTIONS = ["👏", "😂", "😮", "🔥", "😅", "🙏"];
   const SUIT = { S: "♠", H: "♥", D: "♦", C: "♣" };
   const label = (c) => (c[0] === "T" ? "10" : c[0]) + SUIT[c[1]];
   const clean = (s, n) => String(s == null ? "" : s).replace(/[\u0000-\u001f<>]/g, "").trim().slice(0, n);
@@ -24,14 +26,14 @@
   class RoomCore {
     constructor(data) {
       Object.assign(this, {
-        created: false, code: "", phase: "lobby", level: "normal", mode: "2v2", creator: -1,
+        created: false, code: "", phase: "lobby", level: "normal", mode: "2v2", creator: -1, public: false, autoStartAt: 0, lastReact: {},
         seats: [0, 1, 2, 3].map(() => ({ kind: "empty", name: "", token: "", connected: false, awaySince: 0, takenOver: false })),
         state: null, log: [], logId: 0, gameNo: 0, lastCell: -1, recent: [], lastText: "", lastBanter: -9, lastActive: 0
       }, data || {});
     }
     toJSON() {
-      const { created, code, phase, level, mode, creator, seats, state, log, logId, gameNo, lastCell, recent, lastText, lastBanter, lastActive } = this;
-      return { created, code, phase, level, mode, creator, seats, state, log, logId, gameNo, lastCell, recent, lastText, lastBanter, lastActive };
+      const { created, code, phase, level, mode, creator, public: pub, autoStartAt, lastReact, seats, state, log, logId, gameNo, lastCell, recent, lastText, lastBanter, lastActive } = this;
+      return { created, code, phase, level, mode, creator, public: pub, autoStartAt, lastReact, seats, state, log, logId, gameNo, lastCell, recent, lastText, lastBanter, lastActive };
     }
 
     // ---- who is who ----
@@ -61,7 +63,13 @@
 
       switch (msg.t) {
         case "hello": {
-          if (msg.create && !this.created) { this.created = true; this.code = clean(msg.code, 8); }
+          if (msg.create && !this.created) {
+            this.created = true; this.code = clean(msg.code, 8);
+            if (msg.public) { // quick match room: anyone with the code joins, empty seats go to AI after a short wait
+              this.public = true;
+              if (msg.mode === "1v1") { this.mode = "1v1"; this.seats = this.seats.slice(0, 2); }
+            }
+          }
           if (!this.created) return fail("Room not found. Check the code or start a new room.");
           if (msg.token) {
             const i = this.seats.findIndex((s) => s.token && s.token === msg.token);
@@ -87,6 +95,7 @@
           const s = this.seats[i];
           Object.assign(s, { kind: "human", name: clean(msg.name, 16) || "Player " + (i + 1), token: makeToken(rand), connected: true, awaySince: 0, takenOver: false });
           if (this.creator < 0 || this.seats[this.creator].kind !== "human") this.creator = i;
+          if (this.public && !this.autoStartAt) this.autoStartAt = now + AUTOSTART_MS;
           conn.seat = i;
           out.reply = { t: "you", seat: i, token: s.token };
           out.changed = true;
@@ -149,6 +158,7 @@
         case "start": {
           if (!isHost) return fail("Only the host can start.");
           if (this.phase === "playing" && !this.over()) return fail("Game in progress.");
+          if (this.public) this.fillWithAI();
           if (this.seats.some((s) => s.kind === "empty")) return fail("Fill every seat with a friend or an AI first.");
           this.state = E.newGame({ seats: this.seats.length, seed: Math.floor(rand() * 2 ** 31) });
           this.phase = "playing"; this.gameNo++; this.log = []; this.lastCell = -1; this.recent = []; this.lastText = ""; this.lastBanter = -9;
@@ -172,6 +182,14 @@
           out.changed = true;
           return out;
         }
+        case "react": {
+          if (me < 0 || !REACTIONS.includes(msg.emoji)) return fail("Sit down to react.");
+          if (now - (this.lastReact[me] || 0) < 1500) return out; // gentle flood control
+          this.lastReact[me] = now;
+          this.addLog({ k: "react", seat: me, who: this.seats[me].name, emoji: msg.emoji });
+          out.changed = true;
+          return out;
+        }
         case "chat": {
           const text = clean(msg.text, 120);
           if (me < 0 || !text) return fail("Sit down to chat.");
@@ -186,6 +204,17 @@
         default:
           return fail("Unknown message");
       }
+    }
+
+    fillWithAI() {
+      this.seats.forEach((s, i) => { if (s.kind === "empty") Object.assign(s, { kind: "ai", name: AI_NAMES[i], token: "", takenOver: false }); });
+    }
+    // quick match: when the wait is over, fill empty seats with AI and start
+    autoStart(now, rand) {
+      if (!this.public || this.phase !== "lobby" || !this.autoStartAt || now < this.autoStartAt) return false;
+      if (!this.seats.some((s) => s.kind === "human" && s.connected)) return false;
+      const host = { seat: this.hostSeat() };
+      return !!this.handle(host, { t: "start" }, now, rand).changed;
     }
 
     teamNames(t) { return this.seats.filter((s, i) => E.teamOf(i) === t).map((s) => s.name).join(" & "); }
@@ -308,10 +337,11 @@
     }
 
     // ---- what one connection is allowed to see ----
-    view(seat) {
+    view(seat, now) {
       const st = this.state;
       return {
         t: "room", code: this.code, phase: this.phase, level: this.level, mode: this.mode, host: this.hostSeat(), you: seat, gameNo: this.gameNo,
+        public: this.public, startsIn: this.public && this.phase === "lobby" && this.autoStartAt ? Math.max(0, this.autoStartAt - (now || Date.now())) : 0,
         seats: this.seats.map((s) => ({ kind: s.kind, name: s.name, connected: s.kind !== "human" || s.connected, awaySince: s.awaySince, takenOver: !!s.takenOver })),
         game: st ? {
           chips: st.chips, seqCells: st.seqCells, sequences: st.sequences, turn: st.turn, moveNo: st.moveNo,
@@ -325,7 +355,7 @@
     }
   }
 
-  const api = { RoomCore, TAKEOVER_MS, label };
+  const api = { RoomCore, TAKEOVER_MS, AUTOSTART_MS, REACTIONS, label };
   root.SeqRoom = api;
   if (typeof module !== "undefined" && module.exports) module.exports = api;
 })(typeof window !== "undefined" ? window : globalThis);

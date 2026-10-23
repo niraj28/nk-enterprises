@@ -36,6 +36,14 @@ console: `localStorage.setItem("seq.roomServer", "https://sequence-game.<you>.wo
 To test it from your own computer, add `http://localhost:8765` to `ALLOWED_ORIGINS` in
 `wrangler.toml` first.
 
+## Quick match and the daily leaderboard
+
+- `POST /match` (Durable Object `Matchmaker`) hands out the code of a public room that's filling
+  up. The room starts 20 seconds after the first player sits; empty seats get AI players.
+- `GET /daily?day=YYYY-MM-DD` shows the top 10 for a day; `POST` submits a game as the list of the
+  player's moves. The `Board` object replays the game (same seeded deal, same Hard brain) and only
+  records the result the replay produces, one entry per player, kept for a week.
+
 ## How rooms work
 
 - "Play online with friends" asks the Worker for a 5-letter code and opens the lobby.
@@ -67,5 +75,6 @@ Tests (macOS has JavaScriptCore built in):
 ```
 J=/System/Library/Frameworks/JavaScriptCore.framework/Versions/A/Helpers/jsc
 $J sequence/engine.js sequence/brain.js sequence/lines.js sequence/muse.js sequence/room-core.js tests/check_room.js
+$J sequence/engine.js sequence/brain.js sequence/daily.js tests/check_daily.js
 $J -m tests/check_room_do.mjs
 ```

@@ -29,7 +29,9 @@ export class Room {
   }
   async save() {
     await this.ctx.storage.put("room", this.core.toJSON());
-    await this.ctx.storage.setAlarm(Date.now() + IDLE_MS);
+    // wake up for a quick-match auto-start, otherwise for the idle clean-up
+    const c = this.core, auto = c.public && c.phase === "lobby" && c.autoStartAt > Date.now() ? c.autoStartAt : 0;
+    await this.ctx.storage.setAlarm(auto || Date.now() + IDLE_MS);
   }
 
   async fetch(request) {
@@ -120,6 +122,11 @@ export class Room {
 
   async alarm() {
     const core = await this.load();
+    if (core.autoStart(Date.now(), rand)) {
+      await this.save();
+      this.broadcast();
+      return this.runAI();
+    }
     if (Date.now() - core.lastActive >= IDLE_MS - 60 * 1000) {
       for (const ws of this.ctx.getWebSockets()) { try { ws.close(1000, "Room closed after 2 hours idle"); } catch { /* ignore */ } }
       await this.ctx.storage.deleteAll();

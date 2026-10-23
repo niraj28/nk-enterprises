@@ -146,6 +146,25 @@ if (globalThis.SeqMuse) {
   assert(r3.seats.length === 4 && r3.seats[2].kind === "empty", "back to 2v2 adds empty seats");
 }
 
+// quick match: a public room starts by itself after the wait, filling empty seats with AI
+{
+  const q = new R.RoomCore(), a1 = { seat: -1 };
+  q.handle(a1, { t: "hello", create: true, code: "QUICK", public: true, mode: "1v1" }, now, rand);
+  assert(q.public && q.seats.length === 2, "public 1v1 room");
+  q.handle(a1, { t: "sit", seat: 0, name: "Solo" }, now, rand);
+  assert(!q.autoStart(now + 1000, rand), "waits before starting");
+  assert(q.view(0, now).startsIn === R.AUTOSTART_MS, "countdown in view");
+  assert(q.autoStart(now + R.AUTOSTART_MS + 1, rand) && q.phase === "playing" && q.seats[1].kind === "ai", "auto-start with AI");
+  const b1 = { seat: -1 };
+  q.handle(b1, { t: "hello" }, now, rand);
+  assert(q.handle(b1, { t: "sit", seat: 1, name: "Late" }, now, rand).reply.t === "error", "late joiner can't take a seat mid-game");
+  // reactions: allowed set only, and not more than one every 1.5 s per player
+  assert(q.handle(a1, { t: "react", emoji: "💩" }, now, rand).reply.t === "error", "unknown emoji refused");
+  assert(q.handle(a1, { t: "react", emoji: "👏" }, now, rand).changed, "reaction sent");
+  assert(!q.handle(a1, { t: "react", emoji: "🔥" }, now + 500, rand).changed, "reaction flood held back");
+  assert(q.log.filter((l) => l.k === "react").length === 1, "one reaction logged");
+}
+
 // chat and play again
 send(c, { t: "chat", text: "gg <script>" });
 assert(room.log[room.log.length - 1].text === "gg script", "chat sanitised");
@@ -153,4 +172,4 @@ assert(send(c, { t: "start" }).reply.t === "error", "only host restarts");
 send(a, { t: "start" });
 assert(room.phase === "playing" && room.gameNo === 2, "play again");
 
-out(`PASS: rooms (1v1 and 2v2, create, seats, host, AI fill-in, takeover and return, ${steps} turns, private hands, save/restore, chat).`);
+out(`PASS: rooms (quick match auto-start, reactions, 1v1 and 2v2, create, seats, host, AI fill-in, takeover and return, ${steps} turns, private hands, save/restore, chat).`);

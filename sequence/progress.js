@@ -1,9 +1,9 @@
 /* Player progress kept on this device: results, streaks, badges and the daily challenge.
-   Nothing here leaves the browser. */
+   It stays in the browser; only the daily leaderboard (when the player posts) sends a name, a
+   random player id and the game moves. */
 (function (root) {
   "use strict";
   const KEY = "seq.stats";
-  const LAUNCH = Date.UTC(2026, 9, 23); // Daily challenge #1
 
   const BADGES = [
     { id: "first", icon: "🥉", name: "First win", hint: "Win any game" },
@@ -28,14 +28,15 @@
     d = d || new Date();
     return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
   }
-  function dailyNo(day) {
-    const [y, m, dd] = day.split("-").map(Number);
-    return Math.floor((Date.UTC(y, m - 1, dd) - LAUNCH) / 86400000) + 1;
-  }
-  function dailySeed(day) {
-    let h = 2166136261;
-    for (const ch of "sequence-daily-" + day) { h ^= ch.charCodeAt(0); h = Math.imul(h, 16777619); }
-    return h >>> 0;
+  const dailyNo = (day) => root.SeqDaily.dailyNo(day);
+  const dailySeed = (day) => root.SeqDaily.dailySeed(day);
+  // a random id for this browser, so the daily leaderboard keeps one entry per player
+  function playerId() {
+    try {
+      let id = localStorage.getItem("seq.player");
+      if (!id) { id = Math.random().toString(36).slice(2) + Date.now().toString(36); localStorage.setItem("seq.player", id); }
+      return id;
+    } catch (e) { return "anon-" + Math.random().toString(36).slice(2); }
   }
 
   // game: { result: "win" | "loss" | "draw", mode: "1v1" | "2v2", level, moves, online, daily }
@@ -66,5 +67,5 @@
     return { stats: s, newBadges, fastest };
   }
 
-  root.SeqProgress = { BADGES, load, record, today, dailyNo, dailySeed };
+  root.SeqProgress = { BADGES, load, record, today, dailyNo, dailySeed, playerId };
 })(window);

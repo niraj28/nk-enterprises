@@ -3,10 +3,15 @@
 globalThis.crypto = globalThis.crypto || { getRandomValues: (a) => { for (let i = 0; i < a.length; i++) a[i] = Math.floor(Math.random() * 2 ** 32) >>> 0; return a; } };
 globalThis.AbortController = globalThis.AbortController || class { constructor() { this.signal = {}; } abort() {} }; // Cloudflare has these; JavaScriptCore does not
 globalThis.clearTimeout = globalThis.clearTimeout || (() => {});
+globalThis.URL = globalThis.URL || class { constructor(u) { const q = (u.split("?")[1] || ""); this.searchParams = { get: (k) => { const m = q.split("&").map((p) => p.split("=")).find(([n]) => n === k); return m ? decodeURIComponent(m[1] || "") : null; } }; this.pathname = u.replace(/^https?:\/\/[^/]+/, "").split("?")[0]; } };
 const log = typeof print === "function" ? print : (m) => console.log(m);
 function assert(ok, msg) { if (!ok) throw new Error("FAIL: " + msg); }
 
 const { Room } = await import("../sequence/worker/room-do.js");
+const { Board } = await import("../sequence/worker/board-do.js");
+const { Matchmaker } = await import("../sequence/worker/match-do.js");
+globalThis.Response = globalThis.Response || class { constructor(b, o) { this.body = b; this.status = (o && o.status) || 200; } static json(d, o) { const r = new Response(JSON.stringify(d), o); r.data = d; return r; } };
+const memStore = () => { const m = new Map(); return { get: async (k) => m.get(k), put: async (k, v) => { m.set(k, JSON.parse(JSON.stringify(v))); }, setAlarm: async () => {}, deleteAll: async () => m.clear() }; };
 
 class FakeWS {
   constructor() { this.sent = []; this.att = null; this.closed = false; }
@@ -97,4 +102,34 @@ for (let i = 0; i < 60 && h.last("room").game.turn !== 0; i++) await new Promise
 const fb = h.last("room").log.filter((l) => l.k === "move" && l.seat !== 0).slice(-3);
 assert(fb.length === 3 && fb.every((m) => m.src === "brain"), "falls back to the brain when the model fails");
 
-log(`PASS: Durable Object glue (sockets, per-seat views, hibernation restore, multi-tab, AI loop: ${after.game.moveNo - before} AI moves, model turns and fallback).`);
+// leaderboard: verifies by replay, one entry per player, ranks wins by fewest moves
+{
+  const E2 = globalThis.SeqEngine, D2 = globalThis.SeqDaily, day = "2026-10-23";
+  const st = D2.newGame(day), moves = [];
+  while (st.winner == null && !st.draw) {
+    const s = st.turn; E2.tradeDeadCard(st, s);
+    if (!E2.legalMoves(st, s).length) { E2.pass(st, s); continue; }
+    const m = s === 0 ? E2.legalMoves(st, 0)[0] : D2.aiMove(st, s);
+    if (s === 0) moves.push({ type: m.type, card: m.card, cell: m.cell });
+    E2.applyMove(st, s, m);
+  }
+  const board = new Board({ storage: memStore() }, {});
+  const post = (body) => board.fetch({ url: "https://x/daily?day=" + day, method: "POST", json: async () => body }).then((r) => r);
+  let res = await post({ player: "p1", name: "Asha", moves });
+  assert(res.status === 200 && res.data.rank === 1 && res.data.top[0].moves === st.moveNo, "verified result recorded");
+  res = await post({ player: "p2", name: "Cheat", moves: moves.slice(0, 3) });
+  assert(res.status === 422, "unverifiable game refused");
+  res = await post({ player: "p1", name: "Asha again", moves: [] });
+  assert(res.data.already && res.data.total === 1, "one entry per player");
+  const got = await board.fetch({ url: "https://x/daily?day=" + day, method: "GET" });
+  assert(got.data.total === 1 && !("player" in got.data.top[0]), "public rows hide player ids");
+}
+// matchmaker: same code while a room fills, a new one when it's full
+{
+  const mm = new Matchmaker({ storage: memStore() }, {});
+  const ask = (mode) => mm.fetch({ json: async () => ({ mode }) }).then((r) => r.data);
+  const a = await ask("1v1"), b = await ask("1v1"), c = await ask("1v1"), d4 = await ask("2v2");
+  assert(a.code === b.code && c.code !== a.code && d4.code !== a.code, "matchmaker pairs then rotates");
+}
+
+log(`PASS: Durable Object glue (sockets, per-seat views, hibernation restore, multi-tab, AI loop: ${after.game.moveNo - before} AI moves, model turns and fallback, leaderboard verification, matchmaker).`);

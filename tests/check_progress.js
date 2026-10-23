@@ -1,9 +1,9 @@
 // Progress (stats, badges, daily challenge) checks. Run with macOS JavaScriptCore:
-// jsc tests/check_progress.js   (loads sequence/progress.js itself)
+// jsc tests/check_progress.js   (loads the game files itself)
 const mem = {};
 globalThis.window = globalThis;
 globalThis.localStorage = { getItem: (k) => (k in mem ? mem[k] : null), setItem: (k, v) => { mem[k] = String(v); }, removeItem: (k) => { delete mem[k]; } };
-load("sequence/progress.js");
+load("sequence/engine.js"); load("sequence/brain.js"); load("sequence/daily.js"); load("sequence/progress.js");
 const P = globalThis.SeqProgress, out = typeof print === "function" ? print : console.log;
 function assert(ok, msg) { if (!ok) throw new Error("FAIL: " + msg); }
 

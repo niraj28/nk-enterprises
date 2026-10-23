@@ -24,7 +24,7 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700&family=Hind:wght@400;500;600;700&display=swap">
   <link rel="stylesheet" href="../assets/style.css?v=5">
   <link rel="stylesheet" href="../assets/navigation.css?v=3">
-  <link rel="stylesheet" href="game.css?v=14">
+  <link rel="stylesheet" href="game.css?v=15">
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6116067692659093" crossorigin="anonymous"></script>
 </head>
 <body>
@@ -72,8 +72,10 @@
     <div class="quick">
       <button class="btn btn-yellow btn-play" id="startBtn" type="button">▶ Play now</button>
       <button class="btn btn-line" id="watchBtn" type="button">👀 Watch 4 AI agents</button>
-      <button class="btn btn-green btn-online" id="onlineBtn" type="button" hidden>🌐 Play online with friends</button>
+      <button class="btn btn-green" id="quickBtn" type="button" hidden>⚡ Quick match</button>
+      <button class="btn btn-green" id="onlineBtn" type="button" hidden>🌐 Play with friends</button>
       <button class="btn btn-line btn-daily" id="dailyBtn" type="button">📅 Daily challenge</button>
+      <p class="daily-best" id="dailyBest" aria-live="polite"></p>
     </div>
     <section class="record" id="record" aria-label="Your record"></section>
     <form class="join" id="joinForm" hidden>
@@ -172,6 +174,9 @@
         <div class="banner" id="banner"><b id="turnText"></b><span id="lastText"></span></div>
         <div class="board" id="board" role="grid" aria-label="Board"></div>
         <div class="hand" id="hand" aria-label="Your cards"></div>
+        <div class="reactions" id="reactions" hidden aria-label="Send a reaction">
+          <button type="button" data-emoji="👏" aria-label="Clap">👏</button><button type="button" data-emoji="😂" aria-label="Laugh">😂</button><button type="button" data-emoji="😮" aria-label="Wow">😮</button><button type="button" data-emoji="🔥" aria-label="Fire">🔥</button><button type="button" data-emoji="😅" aria-label="Phew">😅</button><button type="button" data-emoji="🙏" aria-label="Please">🙏</button>
+        </div>
       </div>
       <aside class="side">
         <h2 class="side-title">Table talk</h2>
@@ -247,10 +252,11 @@
 <script src="lines.js?v=2"></script>
 <script src="muse.js?v=6"></script>
 <script src="sound.js?v=1"></script>
-<script src="progress.js?v=1"></script>
-<script src="room-core.js?v=3"></script>
-<script src="online.js?v=4"></script>
-<script src="game.js?v=13"></script>
+<script src="daily.js?v=1"></script>
+<script src="progress.js?v=2"></script>
+<script src="room-core.js?v=4"></script>
+<script src="online.js?v=5"></script>
+<script src="game.js?v=15"></script>
 <script src="../assets/ads.js?v=1" defer></script>
 <script defer src="/assets/dot.js?v=2"></script>
 </body>
