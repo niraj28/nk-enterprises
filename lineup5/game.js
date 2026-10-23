@@ -3,6 +3,10 @@
   "use strict";
   const E = window.SeqEngine, B = window.SeqBrain, M = window.SeqMuse, L = window.SeqLines, O = window.SeqOnline;
   const P = window.SeqProgress, D = window.SeqDaily;
+  // Inside the iPhone app the page comes from lineup5://, so shared links use the public site
+  const APP = window.LineUpApp || null;
+  const PUBLIC_URL = "https://digitallifenotes.blog/lineup5/";
+  const pageUrl = () => (/^https?:$/.test(location.protocol) ? location.origin + location.pathname : PUBLIC_URL);
   const S = window.SeqSound || { play() {}, enabled: () => false, toggle: () => false };
   const $ = (id) => document.getElementById(id);
   const SUIT = { S: "♠", H: "♥", D: "♦", C: "♣" };
@@ -83,9 +87,10 @@
     const url = M.proxyUrl(), el = $("museStatus");
     el.className = "muse-status" + (url ? " on" : "");
     el.textContent = url ? "AI players think with Google Gemini." : "AI seats use the built-in brain.";
-    $("proxyInput").value = url;
+    if ($("proxyInput")) $("proxyInput").value = url;
   }
-  $("proxySave").addEventListener("click", () => {
+  // the site-owner panel for the AI server address (not in the iPhone app)
+  if ($("proxySave")) $("proxySave").addEventListener("click", () => {
     const v = $("proxyInput").value.trim();
     try { v ? localStorage.setItem("seq.museProxy", v) : localStorage.removeItem("seq.museProxy"); } catch (e) { /* ignore */ }
     renderMuseStatus();
@@ -133,7 +138,8 @@
   function showTable() {
     document.body.classList.add("playing");
     $("setup").hidden = true; $("table").hidden = false; $("winSheet").hidden = true;
-    $("chatForm").hidden = online ? false : humans() === 0;
+    // the iPhone app has no typed chat online (strangers in quick match): emoji reactions only
+    $("chatForm").hidden = online ? !!APP : humans() === 0;
     $("pauseBtn").hidden = !!online || humans() > 0;
     $("speed").parentElement.hidden = !!online;
     $("reactions").hidden = !online || online.you < 0;
@@ -547,7 +553,7 @@
     toast.timer = setTimeout(() => { t.hidden = true; }, 3500);
   };
   const myName = () => (store.get("seq.name", "") || "").slice(0, 16);
-  const roomLink = (code) => location.origin + location.pathname + "?room=" + code;
+  const roomLink = (code) => pageUrl() + "?room=" + code;
 
   async function createRoom() {
     try {
@@ -794,7 +800,13 @@
   document.querySelectorAll("#lobbyLevels button").forEach((b) => b.addEventListener("click", () => online && online.conn.send({ t: "level", level: b.dataset.l })));
   $("lobbyStart").addEventListener("click", () => online && online.conn.send({ t: "start" }));
   $("lobbyExit").addEventListener("click", leaveRoom);
+  $("shareWa").addEventListener("click", (e) => {
+    if (!APP || !online) return;
+    e.preventDefault(); // the app uses the iPhone share sheet (WhatsApp is one of the choices)
+    APP.share(`Join my Line Up 5 game! Room ${online.code}: ${roomLink(online.code)}`);
+  });
   $("copyLink").addEventListener("click", async () => {
+    if (APP) return APP.share(roomLink(online.code));
     try { await navigator.clipboard.writeText(roomLink(online.code)); toast("Link copied. Paste it to your friends."); }
     catch (e) { toast(roomLink(online.code)); }
   });
@@ -911,7 +923,7 @@
   });
 
   // ---- Progress: record card, badges, sharing, confetti, vibration ----
-  const gameUrl = () => location.origin + location.pathname;
+  const gameUrl = () => pageUrl().replace(/\/$/, "") + "/";
   function renderRecord() {
     const st = P.load(), day = P.today(), done = st.daily[day];
     $("dailyBtn").innerHTML = `📅 Daily challenge #${P.dailyNo(day)}` +
@@ -935,7 +947,8 @@
     } else if (result === "win") {
       text = `🏆 I won a game of Line Up 5 ${online ? "online" : "against the " + gameLevel + " AI"} in ${moves} moves! Play free: ${gameUrl()}`;
     }
-    if (text) bits.push(`<div class="share-row"><a class="btn btn-green" href="https://wa.me/?text=${encodeURIComponent(text)}" target="_blank" rel="noopener">Share on WhatsApp</a></div>`);
+    if (text && APP) bits.push(`<div class="share-row"><button type="button" class="btn btn-green" data-share="${esc(text)}">Share result</button></div>`);
+    else if (text) bits.push(`<div class="share-row"><a class="btn btn-green" href="https://wa.me/?text=${encodeURIComponent(text)}" target="_blank" rel="noopener">Share on WhatsApp</a></div>`);
     $("winExtra").innerHTML = bits.join("");
   }
   function confetti() {
@@ -956,7 +969,15 @@
     document.body.appendChild(box);
     setTimeout(() => box.remove(), 4200);
   }
-  function buzz(pattern) { if (S.enabled() && navigator.vibrate) { try { navigator.vibrate(pattern); } catch (e) { /* not allowed */ } } }
+  function buzz(pattern) {
+    if (!S.enabled()) return;
+    if (APP) return APP.buzz(pattern); // real haptics in the iPhone app (Safari can't vibrate)
+    if (navigator.vibrate) { try { navigator.vibrate(pattern); } catch (e) { /* not allowed */ } }
+  }
+  $("winExtra").addEventListener("click", (e) => {
+    const b = e.target.closest("[data-share]");
+    if (b && APP) APP.share(b.dataset.share);
+  });
 
   $("tutBtn").addEventListener("click", () => { store.set("seq.tutorial", true); $("tutorial").hidden = true; });
   $("dailyBtn").addEventListener("click", () => start(false, true));
@@ -1000,12 +1021,20 @@
   renderRecord();
   renderDailyBest();
 
+  // ---- iPhone app: daily reminder switch ----
+  if (APP) {
+    $("reminderRow").hidden = false;
+    window.__lineupReminder = (on) => { $("reminderToggle").checked = !!on; };
+    $("reminderToggle").addEventListener("change", () => APP.reminder($("reminderToggle").checked));
+    APP.reminderState();
+  }
+
   // ---- Install as an app (PWA) and offline play ----
-  if ("serviceWorker" in navigator && (location.protocol === "https:" || O.isDev())) {
+  if (!APP && "serviceWorker" in navigator && (location.protocol === "https:" || O.isDev())) {
     navigator.serviceWorker.register("sw.js").catch(() => { /* offline support is optional */ });
   }
   let installEvent = null;
-  const standalone = matchMedia("(display-mode: standalone)").matches || navigator.standalone;
+  const standalone = !!APP || matchMedia("(display-mode: standalone)").matches || navigator.standalone;
   window.addEventListener("beforeinstallprompt", (e) => {
     e.preventDefault();
     installEvent = e;

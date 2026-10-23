@@ -133,6 +133,9 @@
 .cell:focus-visible { outline: 3px solid var(--blue); outline-offset: 1px; z-index: 4; }
 @media (prefers-reduced-motion: reduce) { .float-emoji { animation-duration: .01s; } }
 
+.privacy-link { margin: 0; font-size: 14px; text-align: right; }
+.privacy-link a { color: var(--muted); }
+
 /* avatars */
 .avatar { --c: var(--blue); width: 38px; height: 38px; border-radius: 50%; display: grid; place-items: center; flex: none; background: var(--c); color: #fff; font-family: var(--display); font-weight: 700; font-size: 18px; line-height: 1; position: relative; }
 .avatar.t1 { --c: var(--green); }
