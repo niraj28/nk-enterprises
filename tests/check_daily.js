@@ -1,5 +1,5 @@
 // Daily challenge replay checks. Run with macOS JavaScriptCore:
-// jsc sequence/engine.js sequence/brain.js sequence/daily.js tests/check_daily.js
+// jsc lineup5/engine.js lineup5/brain.js lineup5/daily.js tests/check_daily.js
 const E = globalThis.SeqEngine, B = globalThis.SeqBrain, D = globalThis.SeqDaily;
 const out = typeof print === "function" ? print : console.log;
 function assert(ok, msg) { if (!ok) throw new Error("FAIL: " + msg); }

@@ -1,5 +1,5 @@
 // Online room checks. Run with macOS JavaScriptCore:
-// jsc sequence/engine.js sequence/brain.js sequence/lines.js sequence/muse.js sequence/room-core.js tests/check_room.js
+// jsc lineup5/engine.js lineup5/brain.js lineup5/lines.js lineup5/muse.js lineup5/room-core.js tests/check_room.js
 const E = globalThis.SeqEngine, R = globalThis.SeqRoom;
 const out = typeof console !== "undefined" ? (m) => console.log(m) : print;
 function assert(ok, msg) { if (!ok) throw new Error("FAIL: " + (msg || "assertion")); }

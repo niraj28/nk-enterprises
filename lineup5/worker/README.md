@@ -1,6 +1,6 @@
-# Sequence game server (Cloudflare Worker)
+# Line Up 5 game server (Cloudflare Worker)
 
-One small Cloudflare Worker does two jobs for the game at digitallifenotes.blog/sequence/:
+One small Cloudflare Worker does two jobs for the game at digitallifenotes.blog/lineup5/:
 
 - **Online rooms**: friends play from their own phones. Each room is a Durable Object that
   holds the deck and every hand, so no player's browser ever receives another player's cards.
@@ -21,15 +21,15 @@ You need Node.js on your computer (for `npx`) and a free Cloudflare account.
    npx wrangler deploy
    ```
    It prints a URL like `https://sequence-game.<you>.workers.dev`.
-2. Put that URL in `ROOM_SERVER` (now set to https://sequence-game.sqnce.workers.dev) in `sequence/online.js`, bump `online.js?v=` in
-   `sequence/index.html`, and push. The "Play online with friends" button then appears on
+2. Put that URL in `ROOM_SERVER` (now set to https://sequence-game.sqnce.workers.dev) in `lineup5/online.js`, bump `online.js?v=` in
+   `lineup5/index.html`, and push. The "Play online with friends" button then appears on
    the game page. (It stays hidden on the live site until this is set.)
 3. Optional, for Muse: get a key from the Meta Model API (https://ai.developer.meta.com),
    check the base URL and model ID in `wrangler.toml`, then:
    ```
    npx wrangler secret put MUSE_API_KEY
    ```
-   and put the same Worker URL in `DEFAULT_PROXY` in `sequence/muse.js`.
+   and put the same Worker URL in `DEFAULT_PROXY` in `lineup5/muse.js`.
 
 To try a deployed Worker before publishing, open the game page and run this in the browser
 console: `localStorage.setItem("seq.roomServer", "https://sequence-game.<you>.workers.dev")`.
@@ -47,7 +47,7 @@ To test it from your own computer, add `http://localhost:8765` to `ALLOWED_ORIGI
 ## How rooms work
 
 - "Play online with friends" asks the Worker for a 5-letter code and opens the lobby.
-  Share the link (`/sequence/?room=CODE`) on WhatsApp.
+  Share the link (`/lineup5/?room=CODE`) on WhatsApp.
 - Friends pick a seat. The host (the room's creator) can fill empty seats with AI players and
   set the AI level. The host role passes to another player if the host leaves.
 - If someone drops for a minute, the host can let the AI play their seat. Opening the same
@@ -74,7 +74,7 @@ To test it from your own computer, add `http://localhost:8765` to `ALLOWED_ORIGI
 Tests (macOS has JavaScriptCore built in):
 ```
 J=/System/Library/Frameworks/JavaScriptCore.framework/Versions/A/Helpers/jsc
-$J sequence/engine.js sequence/brain.js sequence/lines.js sequence/muse.js sequence/room-core.js tests/check_room.js
-$J sequence/engine.js sequence/brain.js sequence/daily.js tests/check_daily.js
+$J lineup5/engine.js lineup5/brain.js lineup5/lines.js lineup5/muse.js lineup5/room-core.js tests/check_room.js
+$J lineup5/engine.js lineup5/brain.js lineup5/daily.js tests/check_daily.js
 $J -m tests/check_room_do.mjs
 ```

@@ -3,7 +3,7 @@
 const mem = {};
 globalThis.window = globalThis;
 globalThis.localStorage = { getItem: (k) => (k in mem ? mem[k] : null), setItem: (k, v) => { mem[k] = String(v); }, removeItem: (k) => { delete mem[k]; } };
-load("sequence/engine.js"); load("sequence/brain.js"); load("sequence/daily.js"); load("sequence/progress.js");
+load("lineup5/engine.js"); load("lineup5/brain.js"); load("lineup5/daily.js"); load("lineup5/progress.js");
 const P = globalThis.SeqProgress, out = typeof print === "function" ? print : console.log;
 function assert(ok, msg) { if (!ok) throw new Error("FAIL: " + msg); }
 

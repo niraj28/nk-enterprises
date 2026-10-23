@@ -7,9 +7,9 @@ globalThis.URL = globalThis.URL || class { constructor(u) { const q = (u.split("
 const log = typeof print === "function" ? print : (m) => console.log(m);
 function assert(ok, msg) { if (!ok) throw new Error("FAIL: " + msg); }
 
-const { Room } = await import("../sequence/worker/room-do.js");
-const { Board } = await import("../sequence/worker/board-do.js");
-const { Matchmaker } = await import("../sequence/worker/match-do.js");
+const { Room } = await import("../lineup5/worker/room-do.js");
+const { Board } = await import("../lineup5/worker/board-do.js");
+const { Matchmaker } = await import("../lineup5/worker/match-do.js");
 globalThis.Response = globalThis.Response || class { constructor(b, o) { this.body = b; this.status = (o && o.status) || 200; } static json(d, o) { const r = new Response(JSON.stringify(d), o); r.data = d; return r; } };
 const memStore = () => { const m = new Map(); return { get: async (k) => m.get(k), put: async (k, v) => { m.set(k, JSON.parse(JSON.stringify(v))); }, setAlarm: async () => {}, deleteAll: async () => m.clear() }; };
 

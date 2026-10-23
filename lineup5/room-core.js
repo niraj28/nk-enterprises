@@ -163,7 +163,7 @@
           this.state = E.newGame({ seats: this.seats.length, seed: Math.floor(rand() * 2 ** 31) });
           this.phase = "playing"; this.gameNo++; this.log = []; this.lastCell = -1; this.recent = []; this.lastText = ""; this.lastBanter = -9;
           const sides = this.state.sequences.map((q, t) => `${this.teamNames(t)} (${TEAM[t]})`).join(" vs ");
-          this.addLog({ k: "sys", text: `${sides}. AI level: ${this.level}. First to ${this.state.needed} sequence${this.state.needed > 1 ? "s" : ""} wins.` });
+          this.addLog({ k: "sys", text: `${sides}. AI level: ${this.level}. First to ${this.state.needed} line${this.state.needed > 1 ? "s" : ""} wins.` });
           const ais = this.seats.map((s, i) => i).filter((i) => this.seats[i].kind === "ai");
           if (ais.length) this.banter(ais[Math.floor(rand() * ais.length)], "start", null, rand);
           this.prelude(now);
@@ -276,7 +276,7 @@
       this.addLog(entry);
       this.lastText = "";
       if (res.made) {
-        this.lastText = `🎉 ${TEAM[res.team]} made a sequence! (${this.state.sequences[res.team].length}/${this.state.needed})`;
+        this.lastText = `🎉 ${TEAM[res.team]} made a line! (${this.state.sequences[res.team].length}/${this.state.needed})`;
         this.addLog({ k: "big", text: this.lastText });
       }
       return res;

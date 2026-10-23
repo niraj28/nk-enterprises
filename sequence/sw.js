@@ -1,27 +1,11 @@
-/* Offline support for the Sequence game. Pages and scripts always come from the network when
-   it's available (so updates show up at once) and from this cache when it isn't, so local games
-   against the AI keep working offline. Online rooms and Gemini need a connection anyway. */
-const CACHE = "sequence-v4";
-const CORE = [
-  "./", "game.css", "engine.js", "brain.js", "lines.js", "muse.js", "sound.js", "daily.js", "progress.js",
-  "room-core.js", "online.js", "game.js", "manifest.webmanifest",
-  "icons/icon-192.png", "icons/icon-512.png", "icons/apple-touch-icon.png",
-  "../assets/style.css", "../assets/navigation.css", "../assets/lic-logo.png"
-];
-
-self.addEventListener("install", (e) => {
-  e.waitUntil(caches.open(CACHE).then((c) => c.addAll(CORE)).then(() => self.skipWaiting()));
-});
+/* The game moved to /lineup5/. Phones that installed the old version get this file as an
+   update: it deletes the old offline copy, removes itself and reloads, which lands on the
+   redirect page and then the new address. */
+self.addEventListener("install", () => self.skipWaiting());
 self.addEventListener("activate", (e) => {
-  e.waitUntil(caches.keys().then((keys) => Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k)))).then(() => self.clients.claim()));
-});
-self.addEventListener("fetch", (e) => {
-  const req = e.request;
-  if (req.method !== "GET" || new URL(req.url).origin !== self.location.origin) return; // fonts, ads, game server: browser default
-  e.respondWith(
-    fetch(req).then((res) => {
-      if (res.ok) { const copy = res.clone(); caches.open(CACHE).then((c) => c.put(req, copy)); }
-      return res;
-    }).catch(() => caches.match(req, { ignoreSearch: true }).then((hit) => hit || caches.match("./")))
-  );
+  e.waitUntil((async () => {
+    for (const key of await caches.keys()) if (key.startsWith("sequence-")) await caches.delete(key);
+    await self.registration.unregister();
+    for (const client of await self.clients.matchAll({ type: "window" })) client.navigate(client.url);
+  })());
 });

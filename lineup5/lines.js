@@ -7,7 +7,7 @@
     Arya: {
       start: ["Good luck, everyone. Let's keep it clean.", "Centre first, corners later. Shall we?"],
       four: ["Four in a line. Your move, {opp}.", "That line needs one more. Just saying."],
-      sequence: ["Sequence. Exactly as planned.", "One down. Patience wins these."],
+      sequence: ["Line complete. Exactly as planned.", "One down. Patience wins these."],
       block: ["Not that line, {opp}.", "I saw that one coming three moves ago."],
       remove: ["Sorry {opp}, that chip had to go.", "Removing the keystone."],
       wild: ["Wild card, well spent.", "Some moves are worth a jack."],
@@ -20,7 +20,7 @@
     Kabir: {
       start: ["Let's go! Nobody blinks first.", "I hope you like long lines, because I do."],
       four: ["Four! Come on, stop me if you can.", "Look at that line, {opp}. Scared yet?"],
-      sequence: ["BOOM. Sequence!", "That's how you do it!"],
+      sequence: ["BOOM. Five in a row!", "That's how you do it!"],
       block: ["Nope. Not today, {opp}.", "Blocked! Try another road."],
       remove: ["Your chip? Gone.", "Bulldozer coming through!"],
       wild: ["Wild jack, wild move!", "Rules are for other people. Jack goes here."],
@@ -33,7 +33,7 @@
     Meera: {
       start: ["Picture abhi baaki hai, my friends!", "Chalo, let's make this filmy."],
       four: ["Four in a row! Thoda suspense, thoda drama.", "Interval ke baad climax, {opp}."],
-      sequence: ["Sequence! Kya scene hai!", "Ek line, full paisa vasool."],
+      sequence: ["Paanch in a row! Kya scene hai!", "Ek line, full paisa vasool."],
       block: ["Arre {opp}, itni jaldi kya hai?", "Not on my watch, hero."],
       remove: ["Sorry {opp}, kahani mein twist!", "Yeh chip toh gaya!"],
       wild: ["Jack ki entry, seeti bajao!", "Special appearance by the jack."],
@@ -46,7 +46,7 @@
     Dev: {
       start: ["Wicket to wicket, nothing loose.", "Defence first. Runs will come."],
       four: ["Four! Straight down the ground.", "That's a boundary, {opp}."],
-      sequence: ["Sequence! That's a six over long-on!", "Century up! Raise the bat."],
+      sequence: ["Five in a row! That's a six over long-on!", "Century up! Raise the bat."],
       block: ["Howzat! Line blocked.", "Clean bowled, {opp}. That line's out."],
       remove: ["Run out! Back to the pavilion.", "Stumped. That chip is gone."],
       wild: ["Wild jack: the yorker nobody saw.", "Bringing on the surprise bowler."],

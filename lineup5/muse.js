@@ -5,7 +5,7 @@
   "use strict";
   const E = root.SeqEngine, B = root.SeqBrain;
 
-  // Set this to your deployed Worker URL (see sequence/worker/README.md). Empty = offline brain.
+  // Set this to your deployed Worker URL (see lineup5/worker/README.md). Empty = offline brain.
   const DEFAULT_PROXY = "https://sequence-game.sqnce.workers.dev";
 
   const PERSONAS = [
@@ -48,10 +48,10 @@
     const mate = players.find((p, i) => i !== seat && E.teamOf(i, state.seats) === team);
     const system =
       (state.seats === 3
-        ? `You are ${persona.name}, an AI player in a 3-player Sequence board game, everyone for themselves. Your personality: ${persona.voice}. You play ${teamName}. `
+        ? `You are ${persona.name}, an AI player in a 3-player game of Line Up 5 (a board and card game: play a card, put a chip on a matching space, make lines of 5), everyone for themselves. Your personality: ${persona.voice}. You play ${teamName}. `
         : state.seats === 2
-        ? `You are ${persona.name}, an AI player in a 1-vs-1 Sequence board game. Your personality: ${persona.voice}. You play ${teamName}. `
-        : `You are ${persona.name}, an AI player in a 4-player Sequence board game (two teams of two). ` +
+        ? `You are ${persona.name}, an AI player in a 1-vs-1 game of Line Up 5 (a board and card game: play a card, put a chip on a matching space, make lines of 5). Your personality: ${persona.voice}. You play ${teamName}. `
+        : `You are ${persona.name}, an AI player in a 4-player game of Line Up 5 (a board and card game: play a card, put a chip on a matching space, make lines of 5), two teams of two. ` +
           `Your personality: ${persona.voice}. You are on team ${teamName} with ${mate ? mate.name : "a partner"}. `) +
       `Win by making ${state.needed} line${state.needed > 1 ? "s" : ""} of 5 chips. Corners (*) count for everyone. ` +
       `Pick ONE move from the numbered options. Prefer completing or blocking 4-in-a-row, save wild jacks for when they matter. ` +
@@ -62,7 +62,7 @@
       `${n + 1}. ${s.move.type === "remove" ? "Remove opponent chip at" : "Place chip at"} ${E.cellName(s.move.cell)} using ${label(s.move.card)} - ${s.notes.join(", ")} (engine score ${s.score})`
     ).join("\n");
     const user =
-      `Board (b = Blue, g = Green${state.seats === 3 ? ", r = Red" : ""}, capitals = locked in a finished sequence, * = free corner, rows A-J, columns 1-10):\n${boardText(state)}\n\n` +
+      `Board (b = Blue, g = Green${state.seats === 3 ? ", r = Red" : ""}, capitals = locked in a finished line, * = free corner, rows A-J, columns 1-10):\n${boardText(state)}\n\n` +
       `Sequences: ${state.sequences.map((q, t) => ["Blue", "Green", "Red"][t] + " " + q.length).join(", ")}. Cards left in deck: ${state.deck.length}.\n` +
       `Your hand: ${state.hands[seat].map(label).join(" ")}\n` +
       (chat.length ? `Recent table talk:\n${chat.map((m) => `${m.who}: ${m.text}`).join("\n")}\n` : "") +

@@ -28,7 +28,7 @@
   const seatCount = () => SEATS_FOR[mode];
   function renderMode() {
     document.querySelectorAll("#modes button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.v === mode)));
-    $("modeHint").textContent = { "1v1": "You against one opponent. 7 cards each, first to 2 sequences.", "3p": "Three players, everyone for themselves. 6 cards each, first to 1 sequence.", "2v2": "Two teams of two. 6 cards each, first to 2 sequences." }[mode];
+    $("modeHint").textContent = { "1v1": "You against one opponent. 7 cards each, first to 2 lines.", "3p": "Three players, everyone for themselves. 6 cards each, first to 1 line.", "2v2": "Two teams of two. 6 cards each, first to 2 lines." }[mode];
     $("watchBtn").textContent = `👀 Watch ${seatCount()} AI agents`;
   }
   document.querySelectorAll("#modes button").forEach((b) => b.addEventListener("click", () => {
@@ -122,8 +122,8 @@
     feedLog = []; lastBanter = -9;
     $("feed").innerHTML = ""; $("bubble").hidden = true;
     showTable();
-    if (gameDaily) log("sys", `Daily challenge #${P.dailyNo(gameDaily)}${dailyPractice ? " (practice: today's result is already saved)" : ""}. Same deal for everyone today, against the Hard AI. First to 2 sequences wins.`);
-    else log("sys", `${state.sequences.map((q, t) => `${teamNames(t)} (${TEAM[t]})`).join(" vs ")}. AI level: ${gameLevel}. First to ${state.needed} sequence${state.needed > 1 ? "s" : ""} wins.`);
+    if (gameDaily) log("sys", `Daily challenge #${P.dailyNo(gameDaily)}${dailyPractice ? " (practice: today's result is already saved)" : ""}. Same deal for everyone today, against the Hard AI. First to 2 lines wins.`);
+    else log("sys", `${state.sequences.map((q, t) => `${teamNames(t)} (${TEAM[t]})`).join(" vs ")}. AI level: ${gameLevel}. First to ${state.needed} line${state.needed > 1 ? "s" : ""} wins.`);
     if (humans() > 0 && !store.get("seq.tutorial", false)) { $("tutorial").hidden = false; $("tutBtn").focus(); }
     const ais = players.map((p, i) => i).filter((i) => players[i].mode === "muse");
     if (ais.length) { const my = token, sp = ais[Math.floor(Math.random() * ais.length)]; setTimeout(() => my === token && banter(sp, "start"), 500); }
@@ -215,7 +215,7 @@
     lastText = d.what + (d.note ? " · " + d.note : "");
     log("move", `<b>${esc(d.what)}</b>${d.note ? " · " + esc(d.note) : ""}` + (source ? `<span class="src">${source === "muse" ? "Gemini" : "brain"}</span>` : ""));
     if (res.made) {
-      const msg = `🎉 ${TEAM[res.team]} made a sequence! (${state.sequences[res.team].length}/${state.needed})`;
+      const msg = `🎉 ${TEAM[res.team]} made a line! (${state.sequences[res.team].length}/${state.needed})`;
       log("big", msg);
       lastText = msg;
     }
@@ -268,7 +268,7 @@
     const youWon = h.length === 1 && teamOf(h[0]) === t;
     const youLost = h.length === 1 && t != null && !youWon;
     $("winTitle").textContent = state.draw ? "It's a draw" : youWon ? "You win! 🎉" : youLost ? `${TEAM[t]} wins this time` : `${TEAM[t]}${teamWord(players.length)} wins!`;
-    $("winText").textContent = state.draw ? "The deck ran dry with no winner." : `${teamNames(t)} made ${state.needed} sequence${state.needed > 1 ? "s" : ""} in ${state.moveNo} moves.`;
+    $("winText").textContent = state.draw ? "The deck ran dry with no winner." : `${teamNames(t)} made ${state.needed} line${state.needed > 1 ? "s" : ""} in ${state.moveNo} moves.`;
     document.querySelector(".trophy").textContent = youLost ? "🤝" : "🏆";
     $("againBtn").disabled = false; $("againBtn").textContent = "Play again";
     S.play(youLost ? "lose" : "win");
@@ -584,7 +584,7 @@
     $("myName").value = myName();
     $("lobbySeats").innerHTML = "";
     $("lobbyStatus").textContent = "Connecting…";
-    const text = `Join my Sequence game! Room ${code}: ${roomLink(code)}`;
+    const text = `Join my Line Up 5 game! Room ${code}: ${roomLink(code)}`;
     $("shareWa").href = "https://wa.me/?text=" + encodeURIComponent(text);
     online.conn = O.connect(code, { create, hello: extra || null, onMessage, onStatus });
   }
@@ -692,7 +692,7 @@
         if (!first) { showBubble(e.seat, e.who, e.text); if (!sfx) S.play("chat"); }
       } else {
         log(e.k, e.text, true);
-        if (e.k === "big" && /made a sequence/.test(e.text)) want("sequence");
+        if (e.k === "big" && /made a (line|sequence)/.test(e.text)) want("sequence");
       }
     }
     if (sfx) S.play(sfx);
@@ -704,7 +704,7 @@
     const t = state.winner, mine = v.you >= 0 ? teamOf(v.you) : -1;
     const iHost = v.host === v.you && v.you >= 0;
     $("winTitle").textContent = state.draw ? "It's a draw" : mine === t ? "You win! 🎉" : mine >= 0 ? `${TEAM[t]} wins this time` : `${TEAM[t]}${teamWord(v.seats.length)} wins!`;
-    $("winText").textContent = state.draw ? "The deck ran dry with no winner." : `${teamNames(t)} made ${state.needed} sequence${state.needed > 1 ? "s" : ""} in ${state.moveNo} moves.`;
+    $("winText").textContent = state.draw ? "The deck ran dry with no winner." : `${teamNames(t)} made ${state.needed} line${state.needed > 1 ? "s" : ""} in ${state.moveNo} moves.`;
     document.querySelector(".trophy").textContent = mine >= 0 && mine !== t ? "🤝" : "🏆";
     $("againBtn").disabled = !iHost;
     S.play(mine >= 0 && mine !== t ? "lose" : "win");
@@ -931,9 +931,9 @@
     if (rec.stats.streak > 1 && result === "win") bits.push(`<p class="note">🔥 ${rec.stats.streak} wins in a row</p>`);
     let text = "";
     if (gameDaily && !online) {
-      text = `Sequence Daily #${P.dailyNo(gameDaily)}: ${result === "win" ? "🏆 I beat the Hard AI" : result === "draw" ? "🤝 a draw with the Hard AI" : "😅 the Hard AI got me"} in ${moves} moves. Same deal for everyone today. Your turn: ${gameUrl()}?daily`;
+      text = `Line Up 5 Daily #${P.dailyNo(gameDaily)}: ${result === "win" ? "🏆 I beat the Hard AI" : result === "draw" ? "🤝 a draw with the Hard AI" : "😅 the Hard AI got me"} in ${moves} moves. Same deal for everyone today. Your turn: ${gameUrl()}?daily`;
     } else if (result === "win") {
-      text = `🏆 I won a game of Sequence ${online ? "online" : "against the " + gameLevel + " AI"} in ${moves} moves! Play free: ${gameUrl()}`;
+      text = `🏆 I won a game of Line Up 5 ${online ? "online" : "against the " + gameLevel + " AI"} in ${moves} moves! Play free: ${gameUrl()}`;
     }
     if (text) bits.push(`<div class="share-row"><a class="btn btn-green" href="https://wa.me/?text=${encodeURIComponent(text)}" target="_blank" rel="noopener">Share on WhatsApp</a></div>`);
     $("winExtra").innerHTML = bits.join("");

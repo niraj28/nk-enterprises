@@ -1,8 +1,8 @@
 // Sequence engine checks. Run with Node:  node tests/check_sequence.js
-// or with macOS JavaScriptCore:  jsc sequence/engine.js sequence/brain.js sequence/lines.js sequence/muse.js tests/check_sequence.js
+// or with macOS JavaScriptCore:  jsc lineup5/engine.js lineup5/brain.js lineup5/lines.js lineup5/muse.js tests/check_sequence.js
 const hasRequire = typeof require !== "undefined";
-const E = hasRequire ? require("../sequence/engine.js") : globalThis.SeqEngine;
-const B = hasRequire ? require("../sequence/brain.js") : globalThis.SeqBrain;
+const E = hasRequire ? require("../lineup5/engine.js") : globalThis.SeqEngine;
+const B = hasRequire ? require("../lineup5/brain.js") : globalThis.SeqBrain;
 const out = typeof console !== "undefined" ? (m) => console.log(m) : print;
 function assert(ok, msg) { if (!ok) throw new Error("FAIL: " + (msg || "assertion")); }
 assert.strictEqual = (a, b, msg) => assert(a === b, (msg || "") + ` expected ${b}, got ${a}`);

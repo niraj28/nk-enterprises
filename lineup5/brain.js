@@ -73,7 +73,7 @@
       const made = E.checkSequences(sim, team, move.cell);
       if (made) {
         score += 1000 * made;
-        notes.push(sim.sequences[team].length >= state.needed ? "WINS THE GAME" : "completes a sequence");
+        notes.push(sim.sequences[team].length >= state.needed ? "WINS THE GAME" : "completes a line");
       } else if (hard && fours >= 2) { score += 160; notes.push("sets up two threats at once"); }
       else if (sure) notes.push("sets up a line it can finish next turn");
       else if (bestOwn === 4) notes.push("makes 4 in a row");
