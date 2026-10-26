@@ -20,7 +20,7 @@
     { id: 'thanks', k: ['thank', 'thanks', 'thx', 'dhanyavad', 'dhanyawad', 'shukriya', 'धन्यवाद', 'ok thanks'],
       a: 'You\'re welcome! 😊 Anything else I can help with?' },
     { id: 'contact', k: ['call', 'phone', 'number', 'contact', 'baat', 'talk', 'surendra', 'agent', 'meet', 'office', 'mobile', 'whatsapp', 'human', 'person', 'बात'],
-      a: 'You can reach Surendra Kumar, Authorised LIC Agent, directly:<br><b>9431487230</b> (phone &amp; WhatsApp)<br><b>8271254193</b> (phone)',
+      a: 'You can reach Surendra Kumar, Authorised LIC Agent (agency code 1728/51D), directly:<br><b>9431487230</b> (phone &amp; WhatsApp)<br><b>8271254193</b> (phone)',
       b: [CALL, WHATSAPP()] },
     { id: 'cover', k: ['how much cover', 'kitna cover', 'cover', 'sum assured', 'calculator', 'calculate', 'estimate', 'how much insurance', 'kitna bima'],
       a: 'A common rule of thumb is life cover of about <b>10× your yearly income, plus your loans</b>. Try the free cover check with your own numbers. It takes 30 seconds.',
