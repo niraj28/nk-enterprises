@@ -16,7 +16,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Young+Serif&family=Mukta:wght@400;500;700&display=swap">
-  <link rel="stylesheet" href="assets/home.css?v=1">
+  <link rel="stylesheet" href="assets/home.css?v=2">
   <!-- Google AdSense (needed for site verification; ads only show after approval) -->
   <meta name="google-adsense-account" content="ca-pub-6116067692659093">
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6116067692659093" crossorigin="anonymous"></script>
@@ -47,6 +47,14 @@
       <a href="blog/">Tips</a>
       <a href="about.html">About</a>
       <a href="#contact">Contact</a>
+      <details class="more">
+        <summary>Explore</summary>
+        <div class="more-panel">
+          <a href="durga-puja/"><b>🪔 Festival card</b><small>Make a wish card to share</small></a>
+          <a href="lineup5/"><b>🎲 Line Up 5 game</b><small>Free family board game</small></a>
+          <a href="shop/"><b>✨ Diwali lights</b><small>Planned, not in stock yet</small></a>
+        </div>
+      </details>
     </nav>
   </div>
 </header>
@@ -68,6 +76,15 @@
       <figure class="portrait"><img src="assets/surendra-kumar.jpg" alt="Surendra Kumar, LIC advisor" width="300" height="300"></figure>
     </div>
   </section>
+
+  <nav class="quick" aria-label="Also on this site">
+    <div class="wrap">
+      <span>Also here</span>
+      <a href="durga-puja/">🪔 Festival card</a>
+      <a href="lineup5/">🎲 Line Up 5 game</a>
+      <a href="shop/">✨ Diwali lights</a>
+    </div>
+  </nav>
 
   <section class="block" id="plans">
     <div class="wrap">
@@ -172,7 +189,7 @@
 
 <footer class="foot">
   <div class="wrap">
-    <nav aria-label="Footer"><a href="about.html">About us</a><a href="contact.html">Contact</a><a href="blog/">Insurance tips</a><a href="privacy.html">Privacy policy</a></nav>
+    <nav aria-label="Footer"><a href="about.html">About us</a><a href="contact.html">Contact</a><a href="blog/">Insurance tips</a><a href="durga-puja/">Festival card</a><a href="lineup5/">Line Up 5 game</a><a href="shop/">Diwali lights</a><a href="privacy.html">Privacy policy</a></nav>
     <p>© 2026 N.K.Enterprises · Surendra Kumar, LIC Agent, Agency code 1728/51D. Insurance is the subject matter of solicitation. This is the personal website of an authorised LIC agent, not the official website of Life Insurance Corporation of India. For official information visit <a href="https://licindia.in" rel="noopener" target="_blank">licindia.in</a>.</p>
   </div>
 </footer>
@@ -219,6 +236,16 @@ document.getElementById("callback").addEventListener("submit", function (e) {
   const msg = `Namaste Surendra ji, please call me back.\nName: ${val("cb-name")}\nPhone: ${val("cb-phone")}` + (need ? `\nPlanning for: ${need}` : "");
   window.open("https://wa.me/919431487230?text=" + encodeURIComponent(msg), "_blank", "noopener");
 });
+</script>
+<script>
+// Explore menu: close on an outside click or Escape.
+(function () {
+  const more = document.querySelector(".more");
+  document.addEventListener("click", e => { if (!more.contains(e.target)) more.open = false; });
+  document.addEventListener("keydown", e => {
+    if (e.key === "Escape" && more.open) { more.open = false; more.querySelector("summary").focus(); }
+  });
+})();
 </script>
 <script defer src="/assets/dot.js?v=5"></script>
 </body>
